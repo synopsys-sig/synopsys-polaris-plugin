@@ -1,0 +1,16 @@
+# operating system
+.DS_Store
+
+# ide
+.settings/
+.classpath
+.project
+bin/
+.idea
+*.iml
+out/
+
+# build tool
+.gradle/
+build/
+work/
