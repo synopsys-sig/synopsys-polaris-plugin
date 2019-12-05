@@ -67,10 +67,10 @@ jenkinsPlugin {
     // Must be compatible with the version declared in Jenkins Common
     coreVersion = '2.60.1'
     displayName = 'Synopsys Coverity Plugin'
-    url = 'https://wiki.jenkins.io/display/JENKINS/Synopsys+Coverity+Plugin'
-    gitHubUrl = 'https://github.com/jenkinsci/synopsys-coverity-plugin'
+    url = 'https://wiki.jenkins.io/display/JENKINS/Synopsys+Polaris+Plugin'
+    gitHubUrl = 'https://github.com/jenkinsci/synopsys-polaris-plugin'
 
-    compatibleSinceVersion = '2.0.0'
+    compatibleSinceVersion = '1.0.0'
     pluginFirstClassLoader = false
 }
 

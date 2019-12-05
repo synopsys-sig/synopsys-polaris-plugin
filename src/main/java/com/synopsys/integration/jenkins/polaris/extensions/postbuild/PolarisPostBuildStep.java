@@ -1,5 +1,5 @@
 /**
- * blackduck-detect
+ * synopsys-polaris
  *
  * Copyright (c) 2019 Synopsys, Inc.
  *
