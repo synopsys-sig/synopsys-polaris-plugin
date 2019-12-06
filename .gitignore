@@ -14,3 +14,6 @@ out/
 .gradle/
 build/
 work/
+
+# jenv
+.java-version

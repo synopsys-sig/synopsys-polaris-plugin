@@ -20,18 +20,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.synopsys.integration.jenkins.polaris.extensions.postbuild;
+package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.exception.IntegrationException;
-import com.synopsys.integration.jenkins.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
+import com.synopsys.integration.jenkins.extensions.BuildStatusToSet;
+import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
+import com.synopsys.integration.jenkins.polaris.tools.PolarisCliToolInstallation;
 
 import hudson.Extension;
 import hudson.FilePath;
@@ -42,22 +47,39 @@ import hudson.model.BuildListener;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
+import hudson.tasks.Builder;
+import hudson.tools.ToolInstallation;
+import hudson.util.ListBoxModel;
 
-public class PolarisPostBuildStep extends Recorder {
+public class PolarisBuildStep extends Builder {
     public static final String DISPLAY_NAME = "Synopsys Polaris";
 
-    @HelpMarkdown("The command line options to pass to Synopsys Detect")
+    @HelpMarkdown("The Polaris CLI installation to execute")
+    private final String polarisCliInstallationHome;
+
+    @HelpMarkdown("The command line options to pass to the Synopsys Polaris CLI")
     private final String polarisProperties;
 
+    @HelpMarkdown("Specify the build status to set if issues are found in the configured view.")
+    private final BuildStatusToSet buildStatusOnProblems;
+
     @DataBoundConstructor
-    public PolarisPostBuildStep(final String polarisProperties) {
+    public PolarisBuildStep(final String polarisCliInstallationHome, final String polarisProperties, final BuildStatusToSet buildStatusForIssues) {
+        this.polarisCliInstallationHome = polarisCliInstallationHome;
         this.polarisProperties = polarisProperties;
+        this.buildStatusOnProblems = buildStatusForIssues;
     }
 
     public String getPolarisProperties() {
         return polarisProperties;
+    }
+
+    public String getPolarisCliInstallationHome() {
+        return polarisCliInstallationHome;
+    }
+
+    public BuildStatusToSet getBuildStatusOnProblems() {
+        return buildStatusOnProblems;
     }
 
     @Override
@@ -106,12 +128,28 @@ public class PolarisPostBuildStep extends Recorder {
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
-        private static final long serialVersionUID = 9059602791947799261L;
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable {
+        private static final long serialVersionUID = -3800519788262007744L;
 
         public DescriptorImpl() {
-            super(PolarisPostBuildStep.class);
+            super(PolarisBuildStep.class);
             load();
+        }
+
+        public ListBoxModel doFillPolarisCliInstallationHomeItems() {
+            final PolarisCliToolInstallation.PolarisCliToolDescriptor polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.PolarisCliToolDescriptor.class);
+
+            if (polarisCliToolInstallationDescriptor == null) {
+                return new ListBoxModel();
+            }
+
+            return Stream.of(polarisCliToolInstallationDescriptor.getInstallations())
+                       .map(installation -> new ListBoxModel.Option(installation.getName(), installation.getHome()))
+                       .collect(Collectors.toCollection(ListBoxModel::new));
+        }
+
+        public ListBoxModel doFillBuildStatusOnProblemsItems() {
+            return JenkinsSelectBoxEnum.toListBoxModel(BuildStatusToSet.values());
         }
 
         @Override
