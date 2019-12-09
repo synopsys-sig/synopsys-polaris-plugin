@@ -1,0 +1,12 @@
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <script src="${rootURL}/plugin/synopsys-coverity/javascript/CoverityFunctions.js"/>
+    <script type="text/javascript">setRootURL("${app.rootUrl}");</script>
+
+    <f:entry field="projectName" title="Polaris project name">
+        <f:select id="projectNameCheckIssuesId"/>
+    </f:entry>
+
+    <f:entry field="returnIssueCount" title="Return issue count">
+        <f:checkbox id="returnIssueCountCheckIssuesId"/>
+    </f:entry>
+</j:jelly>

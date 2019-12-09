@@ -36,7 +36,7 @@ import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.extensions.BuildStatusToSet;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
-import com.synopsys.integration.jenkins.polaris.tools.PolarisCliToolInstallation;
+import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCliToolInstallation;
 
 import hudson.Extension;
 import hudson.FilePath;
