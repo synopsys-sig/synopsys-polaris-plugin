@@ -28,14 +28,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.extensions.BuildStatusToSet;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
+import com.synopsys.integration.jenkins.extensions.SetBuildStatus;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCliToolInstallation;
 
 import hudson.Extension;
@@ -57,29 +58,38 @@ public class PolarisBuildStep extends Builder {
     @HelpMarkdown("The Polaris CLI installation to execute")
     private final String polarisCliInstallationHome;
 
-    @HelpMarkdown("The command line options to pass to the Synopsys Polaris CLI")
-    private final String polarisProperties;
+    @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
+    private final String polarisArguments;
 
+    @HelpMarkdown("Wait for the Polaris static analysis to conclude to perform actions based on issues discovered.")
+    private final boolean waitForIssues;
+
+    @Nullable
     @HelpMarkdown("Specify the build status to set if issues are found in the configured view.")
-    private final BuildStatusToSet buildStatusOnProblems;
+    private final SetBuildStatus buildStatusOnProblems;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliInstallationHome, final String polarisProperties, final BuildStatusToSet buildStatusForIssues) {
+    public PolarisBuildStep(final String polarisCliInstallationHome, final String polarisArguments, final SetBuildStatus buildStatusForIssues, final boolean waitForIssues) {
         this.polarisCliInstallationHome = polarisCliInstallationHome;
-        this.polarisProperties = polarisProperties;
+        this.polarisArguments = polarisArguments;
         this.buildStatusOnProblems = buildStatusForIssues;
+        this.waitForIssues = waitForIssues;
     }
 
-    public String getPolarisProperties() {
-        return polarisProperties;
+    public String getPolarisArguments() {
+        return polarisArguments;
     }
 
     public String getPolarisCliInstallationHome() {
         return polarisCliInstallationHome;
     }
 
-    public BuildStatusToSet getBuildStatusOnProblems() {
+    public SetBuildStatus getBuildStatusOnProblems() {
         return buildStatusOnProblems;
+    }
+
+    public boolean getWaitForIssues() {
+        return waitForIssues;
     }
 
     @Override
@@ -149,7 +159,7 @@ public class PolarisBuildStep extends Builder {
         }
 
         public ListBoxModel doFillBuildStatusOnProblemsItems() {
-            return JenkinsSelectBoxEnum.toListBoxModel(BuildStatusToSet.values());
+            return JenkinsSelectBoxEnum.toListBoxModel(SetBuildStatus.values());
         }
 
         @Override

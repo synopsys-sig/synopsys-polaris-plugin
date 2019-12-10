@@ -3,7 +3,7 @@
     <script type="text/javascript">setRootURL("${app.rootUrl}");</script>
 
     <f:entry field="projectName" title="Polaris project name">
-        <f:select id="projectNameCheckIssuesId"/>
+        <f:textbox id="projectNameCheckIssuesId"/>
     </f:entry>
 
     <f:entry field="returnIssueCount" title="Return issue count">

@@ -2,10 +2,12 @@
     <f:entry field="polarisCliInstallationHome" title="Polaris Cli Installation">
         <f:select/>
     </f:entry>
-    <f:entry field="polarisProperties" title="Polaris Properties">
+    <f:entry field="polarisArguments" title="Polaris Arguments">
         <f:textarea/>
     </f:entry>
-    <f:entry field="buildStatusOnProblems" title="Build Status on Issues">
-        <f:select/>
-    </f:entry>
+    <f:optionalBlock checked="${instance.waitForIssues}" field="waitForIssues" title="Wait for Issues">
+        <f:entry field="buildStatusOnProblems" title="If there are issues">
+            <f:select/>
+        </f:entry>
+    </f:optionalBlock>
 </j:jelly>

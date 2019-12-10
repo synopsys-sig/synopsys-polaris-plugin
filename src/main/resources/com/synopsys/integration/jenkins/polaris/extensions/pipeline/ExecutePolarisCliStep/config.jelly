@@ -2,7 +2,7 @@
     <f:entry field="polarisCliInstallationName" title="Polaris Cli Installation">
         <f:select/>
     </f:entry>
-    <f:entry field="polarisProperties" title="Polaris Properties">
+    <f:entry field="polarisArguments" title="Polaris Arguments">
         <f:textarea/>
     </f:entry>
 </j:jelly>

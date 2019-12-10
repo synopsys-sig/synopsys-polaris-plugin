@@ -53,21 +53,21 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
     @HelpMarkdown("The Polaris CLI installation to execute")
     private final String polarisCliInstallationName;
 
-    @HelpMarkdown("The command line options to pass to the Synopsys Polaris CLI")
-    private final String polarisProperties;
+    @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
+    private final String polarisArguments;
 
     @DataBoundConstructor
-    public ExecutePolarisCliStep(final String polarisCliInstallationName, final String polarisProperties) {
+    public ExecutePolarisCliStep(final String polarisCliInstallationName, final String polarisArguments) {
         this.polarisCliInstallationName = polarisCliInstallationName;
-        this.polarisProperties = polarisProperties;
+        this.polarisArguments = polarisArguments;
     }
 
     public String getPolarisCliInstallationName() {
         return polarisCliInstallationName;
     }
 
-    public String getPolarisProperties() {
-        return polarisProperties;
+    public String getPolarisArguments() {
+        return polarisArguments;
     }
 
     @Override
