@@ -24,8 +24,6 @@ package com.synopsys.integration.jenkins.polaris.extensions.tools;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 
 import javax.annotation.Nonnull;
 
@@ -73,14 +71,6 @@ public class PolarisCliToolInstallation extends ToolInstallation implements Node
         @Override
         public String getDisplayName() {
             return "Polaris CLI";
-        }
-
-        /**
-         * Override in order to remove the default "install automatically" checkbox for tool installation
-         */
-        @Override
-        public List<ToolPropertyDescriptor> getPropertyDescriptors() {
-            return Collections.emptyList();
         }
 
         @Override
