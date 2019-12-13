@@ -22,6 +22,7 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
@@ -55,6 +56,10 @@ public class ExecutePolarisCli implements SubStep<ArgumentListBuilder, Integer> 
                                              .stdout(listener)
                                              .quiet(true)
                                              .join();
+
+                if (exitCode > 0) {
+                    return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris failed with exit code: " + exitCode));
+                }
 
                 return SubStepResponse.SUCCESS(exitCode);
             } else {

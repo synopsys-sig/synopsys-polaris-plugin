@@ -24,6 +24,7 @@ package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,17 +39,27 @@ import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
 import com.synopsys.integration.jenkins.extensions.SetBuildStatus;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCliToolInstallation;
+import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
+import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
+import com.synopsys.integration.jenkins.polaris.substeps.ParsePolarisArguments;
+import com.synopsys.integration.stepworkflow.StepWorkflow;
+import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
+import com.synopsys.integration.util.IntEnvironmentVariables;
 
+import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Node;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
+import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.util.ListBoxModel;
 
@@ -56,7 +67,7 @@ public class PolarisBuildStep extends Builder {
     public static final String DISPLAY_NAME = "Synopsys Polaris";
 
     @HelpMarkdown("The Polaris CLI installation to execute")
-    private final String polarisCliInstallationHome;
+    private final String polarisCliName;
 
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
     private final String polarisArguments;
@@ -69,8 +80,8 @@ public class PolarisBuildStep extends Builder {
     private final SetBuildStatus buildStatusOnProblems;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliInstallationHome, final String polarisArguments, final SetBuildStatus buildStatusForIssues, final boolean waitForIssues) {
-        this.polarisCliInstallationHome = polarisCliInstallationHome;
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final SetBuildStatus buildStatusForIssues, final boolean waitForIssues) {
+        this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
         this.buildStatusOnProblems = buildStatusForIssues;
         this.waitForIssues = waitForIssues;
@@ -80,8 +91,8 @@ public class PolarisBuildStep extends Builder {
         return polarisArguments;
     }
 
-    public String getPolarisCliInstallationHome() {
-        return polarisCliInstallationHome;
+    public String getPolarisCliName() {
+        return polarisCliName;
     }
 
     public SetBuildStatus getBuildStatusOnProblems() {
@@ -106,35 +117,72 @@ public class PolarisBuildStep extends Builder {
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
         final JenkinsIntLogger logger = new JenkinsIntLogger(listener);
 
-        try {
-            final FilePath workspace = build.getWorkspace();
-            if (workspace == null) {
-                throw new IntegrationException("Polaris cannot be executed when the workspace is null");
-            }
-
-            // Run polaris and populate exit code
-
-            final int exitCode = 0;
-
-            if (exitCode > 0) {
-                logger.error("Polaris failed with exit code " + exitCode);
-                build.setResult(Result.FAILURE);
-            }
-        } catch (final Exception e) {
-            if (e instanceof InterruptedException) {
-                logger.error("Polaris thread was interrupted", e);
-                build.setResult(Result.ABORTED);
-                Thread.currentThread().interrupt();
-            } else if (e instanceof IntegrationException) {
-                logger.error(e.getMessage());
-                logger.debug(e.getMessage(), e);
-                build.setResult(Result.UNSTABLE);
-            } else {
-                logger.error(e.getMessage(), e);
-                build.setResult(Result.UNSTABLE);
-            }
+        final FilePath workspace = build.getWorkspace();
+        if (workspace == null) {
+            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
         }
-        return true;
+
+        PolarisCliToolInstallation polarisCliToolInstallation = getPolarisCliInstallation()
+                                                                    .orElseThrow(() -> new AbortException(
+                                                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
+        final Node node = build.getBuiltOn();
+        if (node == null) {
+            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
+        }
+
+        final IntEnvironmentVariables intEnvironmentVariables = new IntEnvironmentVariables(false);
+        final EnvVars envVars = build.getEnvironment(listener);
+        polarisCliToolInstallation = polarisCliToolInstallation.forEnvironment(envVars);
+        polarisCliToolInstallation = polarisCliToolInstallation.forNode(node, listener);
+        intEnvironmentVariables.putAll(envVars);
+        logger.setLogLevel(intEnvironmentVariables);
+
+        final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
+        final ParsePolarisArguments parsePolarisArguments = new ParsePolarisArguments(logger, intEnvironmentVariables, polarisCliToolInstallation, polarisArguments);
+        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener);
+
+        return StepWorkflow.first(createPolarisEnvironment)
+                   .then(parsePolarisArguments)
+                   .then(executePolarisCli)
+                   .run()
+                   .handleResponse(response -> afterPerform(logger, response, build));
+    }
+
+    private Optional<PolarisCliToolInstallation> getPolarisCliInstallation() {
+        final ToolDescriptor<PolarisCliToolInstallation> toolDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.DescriptorImpl.class);
+
+        if (toolDescriptor == null) {
+            return Optional.empty();
+        }
+
+        return Stream.of(toolDescriptor.getInstallations())
+                   .filter(installation -> polarisCliName.equals(installation.getName()))
+                   .findFirst();
+    }
+
+    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
+        final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
+        try {
+            if (!wasSuccessful) {
+                throw stepWorkflowResponse.getException();
+            }
+        } catch (final InterruptedException e) {
+            logger.error("[ERROR] Synopsys Coverity thread was interrupted.", e);
+            build.setResult(Result.ABORTED);
+            Thread.currentThread().interrupt();
+        } catch (final IntegrationException e) {
+            this.handleException(logger, build, Result.FAILURE, e);
+        } catch (final Exception e) {
+            this.handleException(logger, build, Result.UNSTABLE, e);
+        }
+
+        return stepWorkflowResponse.wasSuccessful();
+    }
+
+    private void handleException(final JenkinsIntLogger logger, final AbstractBuild build, final Result result, final Exception e) {
+        logger.error("[ERROR] " + e.getMessage());
+        logger.debug(e.getMessage(), e);
+        build.setResult(result);
     }
 
     @Extension
@@ -154,7 +202,8 @@ public class PolarisBuildStep extends Builder {
             }
 
             return Stream.of(polarisCliToolInstallationDescriptor.getInstallations())
-                       .map(installation -> new ListBoxModel.Option(installation.getName(), installation.getHome()))
+                       .map(PolarisCliToolInstallation::getName)
+                       .map(ListBoxModel.Option::new)
                        .collect(Collectors.toCollection(ListBoxModel::new));
         }
 
