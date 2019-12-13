@@ -22,8 +22,9 @@
  */
 package com.synopsys.integration.jenkins.polaris.extensions.tools;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 
@@ -39,78 +40,52 @@ import hudson.model.TaskListener;
 import hudson.slaves.NodeSpecific;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
+import hudson.tools.ToolInstaller;
 import hudson.tools.ToolProperty;
 import hudson.tools.ToolPropertyDescriptor;
 import hudson.util.DescribableList;
-import hudson.util.FormValidation;
 
 public class PolarisCliToolInstallation extends ToolInstallation implements NodeSpecific<PolarisCliToolInstallation>, EnvironmentSpecific<PolarisCliToolInstallation> {
     private static final long serialVersionUID = -3838254855454518440L;
+    private final String executableName;
 
     @DataBoundConstructor
-    public PolarisCliToolInstallation(final String name, final String home) {
+    public PolarisCliToolInstallation(final String name, final String home, final String executableName) {
         super(name, home, new DescribableList<ToolProperty<?>, ToolPropertyDescriptor>(Saveable.NOOP));
+        this.executableName = executableName;
     }
 
     @Override
     public PolarisCliToolInstallation forNode(@Nonnull final Node node, final TaskListener log) throws IOException, InterruptedException {
-        return new PolarisCliToolInstallation(getName(), translateFor(node, log));
+        return new PolarisCliToolInstallation(getName(), translateFor(node, log), getExecutableName());
+    }
+
+    public String getExecutableName() {
+        return executableName;
     }
 
     @Override
     public PolarisCliToolInstallation forEnvironment(final EnvVars environment) {
-        return new PolarisCliToolInstallation(getName(), environment.expand(getHome()));
+        return new PolarisCliToolInstallation(getName(), environment.expand(getHome()), getExecutableName());
     }
 
-    /**
-     * {@link ToolDescriptor} for {@link PolarisCliToolInstallation}
-     */
+    @Override
+    public void buildEnvVars(final EnvVars env) {
+        env.putIfNotNull("PATH+POLARIS", getHome());
+    }
+
     @Extension
     @Symbol("polaris-cli")
-    public static final class PolarisCliToolDescriptor extends ToolDescriptor<PolarisCliToolInstallation> {
+    public static final class DescriptorImpl extends ToolDescriptor<PolarisCliToolInstallation> {
         @Override
         public String getDisplayName() {
             return "Polaris CLI";
         }
 
         @Override
-        public DescribableList<ToolProperty<?>, ToolPropertyDescriptor> getDefaultProperties() {
-            return new DescribableList<>(NOOP);
-        }
-
-        @Override
-        protected FormValidation checkHomeDirectory(final File home) {
-            // This validation is only ever run when on master. Jenkins does not use this to validate node overrides
-            /* This is what it looks like in Coverity:
-            try {
-                File analysisVersionXml = new File(home, "VERSION.xml");
-                if (home != null && home.exists()) {
-                    if (analysisVersionXml.isFile()) {
-
-                        // check the version file value and validate it is greater than minimum version
-                        Optional<CoverityVersion> optionalVersion = getVersion(home);
-
-                        if (!optionalVersion.isPresent()) {
-                            return FormValidation.error("Could not determine the version of the Coverity analysis tool.");
-                        }
-                        CoverityVersion version = optionalVersion.get();
-                        if (version.compareTo(CoverityPostBuildStepDescriptor.MINIMUM_SUPPORTED_VERSION) < 0) {
-                            return FormValidation.error("Analysis version " + version.toString() + " detected. " +
-                                                            "The minimum supported version is " + CoverityPostBuildStepDescriptor.MINIMUM_SUPPORTED_VERSION.toString());
-                        }
-
-                        return FormValidation.ok("Analysis installation directory has been verified.");
-                    } else {
-                        return FormValidation.error("The specified Analysis installation directory doesn't contain a VERSION.xml file.");
-                    }
-                } else {
-                    return FormValidation.error("The specified Analysis installation directory doesn't exists.");
-                }
-            } catch (IOException e) {
-                return FormValidation.error("Unable to verify the Analysis installation directory.");
-            }
-             */
-            return FormValidation.ok();
+        public List<? extends ToolInstaller> getDefaultInstallers() {
+            return Collections.singletonList(new PolarisCliToolInstaller(null));
         }
     }
+
 }

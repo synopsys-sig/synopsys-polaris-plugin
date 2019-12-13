@@ -67,9 +67,11 @@ public class PolarisCliToolInstaller extends ToolInstaller {
             throw new AbortException("Cannot install Polaris CLI Installation" + tool.getName() + " because node " + node.getDisplayName() + " is not connected or offline");
         }
 
-        return virtualChannel.call(new CallableInstallerImpl(jenkinsIntLogger, polarisGlobalConfig, preferredLocation(tool, node)))
-                   .map(remoteDirectory -> new FilePath(virtualChannel, remoteDirectory))
-                   .orElseThrow(() -> new AbortException("Polaris CLI failed to install"));
+        final FilePath polarisCliPath = virtualChannel.call(new CallableInstallerImpl(jenkinsIntLogger, polarisGlobalConfig, preferredLocation(tool, node)))
+                                            .map(polarisCliRemotePath -> new FilePath(virtualChannel, polarisCliRemotePath))
+                                            .orElseThrow(() -> new AbortException("Polaris CLI failed to install"));
+
+        return polarisCliPath.getParent();
     }
 
     @Extension

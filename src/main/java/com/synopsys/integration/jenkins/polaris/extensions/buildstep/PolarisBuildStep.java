@@ -147,7 +147,7 @@ public class PolarisBuildStep extends Builder {
         }
 
         public ListBoxModel doFillPolarisCliInstallationHomeItems() {
-            final PolarisCliToolInstallation.PolarisCliToolDescriptor polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.PolarisCliToolDescriptor.class);
+            final PolarisCliToolInstallation.DescriptorImpl polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.DescriptorImpl.class);
 
             if (polarisCliToolInstallationDescriptor == null) {
                 return new ListBoxModel();
