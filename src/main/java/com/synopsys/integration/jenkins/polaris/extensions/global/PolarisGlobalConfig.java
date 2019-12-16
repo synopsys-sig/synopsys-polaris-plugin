@@ -128,10 +128,6 @@ public class PolarisGlobalConfig extends GlobalConfiguration implements Serializ
         save();
     }
 
-    public Optional<String> getPolarisApiToken(@QueryParameter("polarisCredentialsId") final String polarisCredentialsId) {
-        return SynopsysCredentialsHelper.getApiTokenFromCredentials(polarisCredentialsId);
-    }
-
     public PolarisServerConfig getPolarisServerConfig() throws IllegalArgumentException {
         return getPolarisServerConfigBuilder().build();
     }
@@ -248,7 +244,7 @@ public class PolarisGlobalConfig extends GlobalConfiguration implements Serializ
                                                        .setUrl(polarisUrl)
                                                        .setTimeoutInSeconds(timeout);
 
-        SynopsysCredentialsHelper.getApiTokenFromCredentials(credentialsId).ifPresent(builder::setAccessToken);
+        SynopsysCredentialsHelper.getApiTokenByCredentialsId(credentialsId).ifPresent(builder::setAccessToken);
 
         final ProxyInfo proxyInfo = JenkinsProxyHelper.getProxyInfoFromJenkins(polarisUrl);
 

@@ -22,24 +22,20 @@
  */
 package com.synopsys.integration.jenkins.polaris.extensions.tools;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
 
-import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
-import com.synopsys.integration.polaris.common.cli.PolarisDownloadUtility;
-import com.synopsys.integration.polaris.common.rest.AccessTokenPolarisHttpClient;
+import com.synopsys.integration.jenkins.polaris.substeps.FindOrInstallPolarisCli;
 
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Node;
 import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolInstaller;
@@ -67,11 +63,14 @@ public class PolarisCliToolInstaller extends ToolInstaller {
             throw new AbortException("Cannot install Polaris CLI Installation" + tool.getName() + " because node " + node.getDisplayName() + " is not connected or offline");
         }
 
-        final FilePath polarisCliPath = virtualChannel.call(new CallableInstallerImpl(jenkinsIntLogger, polarisGlobalConfig, preferredLocation(tool, node)))
-                                            .map(polarisCliRemotePath -> new FilePath(virtualChannel, polarisCliRemotePath))
-                                            .orElseThrow(() -> new AbortException("Polaris CLI failed to install"));
+        final FindOrInstallPolarisCli findOrInstallPolarisCli = new FindOrInstallPolarisCli(jenkinsIntLogger, polarisGlobalConfig, preferredLocation(tool, node).getRemote());
 
-        return polarisCliPath.getParent();
+        try {
+            final String polarisCliRemotePath = virtualChannel.call(findOrInstallPolarisCli);
+            return new FilePath(virtualChannel, polarisCliRemotePath);
+        } catch (final IntegrationException ex) {
+            throw new IOException("Polaris CLI was not correctly installed.", ex);
+        }
     }
 
     @Extension
@@ -84,32 +83,6 @@ public class PolarisCliToolInstaller extends ToolInstaller {
         @Override
         public boolean isApplicable(final Class<? extends ToolInstallation> toolType) {
             return toolType == PolarisCliToolInstallation.class;
-        }
-    }
-
-    private static final class CallableInstallerImpl implements Callable<Optional<String>, IllegalArgumentException> {
-        private static final long serialVersionUID = 6457474109970149144L;
-        final JenkinsIntLogger jenkinsIntLogger;
-        final PolarisGlobalConfig polarisGlobalConfig;
-        final FilePath installationLocation;
-
-        public CallableInstallerImpl(final JenkinsIntLogger jenkinsIntLogger, final PolarisGlobalConfig polarisGlobalConfig, final FilePath installationLocation) {
-            this.jenkinsIntLogger = jenkinsIntLogger;
-            this.polarisGlobalConfig = polarisGlobalConfig;
-            this.installationLocation = installationLocation;
-        }
-
-        @Override
-        public Optional<String> call() throws IllegalArgumentException {
-            final File installLocation = new File(installationLocation.getRemote());
-            final AccessTokenPolarisHttpClient accessTokenPolarisHttpClient = polarisGlobalConfig.getPolarisServerConfig().createPolarisHttpClient(jenkinsIntLogger);
-            final PolarisDownloadUtility polarisDownloadUtility = PolarisDownloadUtility.fromPolaris(jenkinsIntLogger, accessTokenPolarisHttpClient, installLocation);
-            return polarisDownloadUtility.retrievePolarisCliExecutablePath();
-        }
-
-        @Override
-        public void checkRoles(final RoleChecker checker) throws SecurityException {
-
         }
     }
 

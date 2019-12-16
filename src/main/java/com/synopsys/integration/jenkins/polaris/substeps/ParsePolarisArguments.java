@@ -54,8 +54,7 @@ public class ParsePolarisArguments extends AbstractSupplyingSubStep<ArgumentList
     public SubStepResponse<ArgumentListBuilder> run() {
         final ArgumentListBuilder args = new ArgumentListBuilder();
 
-        // Possibly? Maybe path to Executable?
-        args.add(polarisCliToolInstallation.getExecutableName());
+        args.add(polarisCliToolInstallation.getHome());
 
         if (StringUtils.isNotBlank(polarisArguments)) {
             Arrays.stream(Commandline.translateCommandline(polarisArguments))

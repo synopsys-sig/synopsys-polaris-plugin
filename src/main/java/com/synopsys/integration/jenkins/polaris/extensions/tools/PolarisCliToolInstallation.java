@@ -47,26 +47,20 @@ import hudson.util.DescribableList;
 
 public class PolarisCliToolInstallation extends ToolInstallation implements NodeSpecific<PolarisCliToolInstallation>, EnvironmentSpecific<PolarisCliToolInstallation> {
     private static final long serialVersionUID = -3838254855454518440L;
-    private final String executableName;
 
     @DataBoundConstructor
-    public PolarisCliToolInstallation(final String name, final String home, final String executableName) {
+    public PolarisCliToolInstallation(final String name, final String home) {
         super(name, home, new DescribableList<ToolProperty<?>, ToolPropertyDescriptor>(Saveable.NOOP));
-        this.executableName = executableName;
     }
 
     @Override
     public PolarisCliToolInstallation forNode(@Nonnull final Node node, final TaskListener log) throws IOException, InterruptedException {
-        return new PolarisCliToolInstallation(getName(), translateFor(node, log), getExecutableName());
-    }
-
-    public String getExecutableName() {
-        return executableName;
+        return new PolarisCliToolInstallation(getName(), translateFor(node, log));
     }
 
     @Override
     public PolarisCliToolInstallation forEnvironment(final EnvVars environment) {
-        return new PolarisCliToolInstallation(getName(), environment.expand(getHome()), getExecutableName());
+        return new PolarisCliToolInstallation(getName(), environment.expand(getHome()));
     }
 
     @Override

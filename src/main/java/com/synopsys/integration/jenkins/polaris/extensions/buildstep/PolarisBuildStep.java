@@ -35,9 +35,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
+import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
-import com.synopsys.integration.jenkins.extensions.SetBuildStatus;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCliToolInstallation;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
@@ -77,10 +77,10 @@ public class PolarisBuildStep extends Builder {
 
     @Nullable
     @HelpMarkdown("Specify the build status to set if issues are found in the configured view.")
-    private final SetBuildStatus buildStatusOnProblems;
+    private final ChangeBuildStatusTo buildStatusOnProblems;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final SetBuildStatus buildStatusForIssues, final boolean waitForIssues) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
         this.buildStatusOnProblems = buildStatusForIssues;
@@ -95,7 +95,7 @@ public class PolarisBuildStep extends Builder {
         return polarisCliName;
     }
 
-    public SetBuildStatus getBuildStatusOnProblems() {
+    public ChangeBuildStatusTo getBuildStatusOnProblems() {
         return buildStatusOnProblems;
     }
 
@@ -208,7 +208,7 @@ public class PolarisBuildStep extends Builder {
         }
 
         public ListBoxModel doFillBuildStatusOnProblemsItems() {
-            return JenkinsSelectBoxEnum.toListBoxModel(SetBuildStatus.values());
+            return JenkinsSelectBoxEnum.toListBoxModel(ChangeBuildStatusTo.values());
         }
 
         @Override
