@@ -33,34 +33,32 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.EnvVars;
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.EnvironmentSpecific;
 import hudson.model.Node;
-import hudson.model.Saveable;
 import hudson.model.TaskListener;
 import hudson.slaves.NodeSpecific;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolInstaller;
 import hudson.tools.ToolProperty;
-import hudson.tools.ToolPropertyDescriptor;
-import hudson.util.DescribableList;
 
-public class PolarisCliToolInstallation extends ToolInstallation implements NodeSpecific<PolarisCliToolInstallation>, EnvironmentSpecific<PolarisCliToolInstallation> {
+public class PolarisCli extends ToolInstallation implements NodeSpecific<PolarisCli>, EnvironmentSpecific<PolarisCli> {
     private static final long serialVersionUID = -3838254855454518440L;
 
     @DataBoundConstructor
-    public PolarisCliToolInstallation(final String name, final String home) {
-        super(name, home, new DescribableList<ToolProperty<?>, ToolPropertyDescriptor>(Saveable.NOOP));
+    public PolarisCli(final String name, final String home, final List<? extends ToolProperty<?>> properties) {
+        super(Util.fixEmptyAndTrim(name), Util.fixEmptyAndTrim(home), properties);
     }
 
     @Override
-    public PolarisCliToolInstallation forNode(@Nonnull final Node node, final TaskListener log) throws IOException, InterruptedException {
-        return new PolarisCliToolInstallation(getName(), translateFor(node, log));
+    public PolarisCli forNode(@Nonnull final Node node, final TaskListener log) throws IOException, InterruptedException {
+        return new PolarisCli(getName(), translateFor(node, log), getProperties().toList());
     }
 
     @Override
-    public PolarisCliToolInstallation forEnvironment(final EnvVars environment) {
-        return new PolarisCliToolInstallation(getName(), environment.expand(getHome()));
+    public PolarisCli forEnvironment(final EnvVars environment) {
+        return new PolarisCli(getName(), environment.expand(getHome()), getProperties().toList());
     }
 
     @Override
@@ -69,8 +67,8 @@ public class PolarisCliToolInstallation extends ToolInstallation implements Node
     }
 
     @Extension
-    @Symbol("polaris-cli")
-    public static final class DescriptorImpl extends ToolDescriptor<PolarisCliToolInstallation> {
+    @Symbol("polarisCli")
+    public static final class DescriptorImpl extends ToolDescriptor<PolarisCli> {
         @Override
         public String getDisplayName() {
             return "Polaris CLI";
@@ -78,7 +76,7 @@ public class PolarisCliToolInstallation extends ToolInstallation implements Node
 
         @Override
         public List<? extends ToolInstaller> getDefaultInstallers() {
-            return Collections.singletonList(new PolarisCliToolInstaller(null));
+            return Collections.singletonList(new PolarisCliInstaller(null));
         }
     }
 

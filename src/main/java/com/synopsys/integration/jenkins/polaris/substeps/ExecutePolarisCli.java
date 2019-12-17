@@ -22,8 +22,9 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
-import com.synopsys.integration.stepworkflow.SubStep;
+import com.synopsys.integration.stepworkflow.AbstractSupplyingSubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
@@ -32,39 +33,44 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 
-public class ExecutePolarisCli implements SubStep<ArgumentListBuilder, Integer> {
+public class ExecutePolarisCli extends AbstractSupplyingSubStep<Integer> {
     private final Launcher launcher;
     private final IntEnvironmentVariables intEnvironmentVariables;
     private final FilePath workspace;
     private final TaskListener listener;
+    private final PolarisCli polarisCli;
+    private final String polarisArguments;
 
-    public ExecutePolarisCli(final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener) {
+    public ExecutePolarisCli(final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener, final PolarisCli polarisCli,
+        final String polarisArguments) {
         this.launcher = launcher;
         this.intEnvironmentVariables = intEnvironmentVariables;
         this.workspace = workspace;
         this.listener = listener;
+        this.polarisCli = polarisCli;
+        this.polarisArguments = polarisArguments;
     }
 
     @Override
-    public SubStepResponse<Integer> run(final SubStepResponse<? extends ArgumentListBuilder> previousResponse) {
+    public SubStepResponse<Integer> run() {
         try {
-            if (previousResponse.isSuccess() && previousResponse.hasData()) {
-                final Integer exitCode = launcher.launch()
-                                             .cmds(previousResponse.getData())
-                                             .envs(intEnvironmentVariables.getVariables())
-                                             .pwd(workspace)
-                                             .stdout(listener)
-                                             .quiet(true)
-                                             .join();
+            final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
+            argumentListBuilder.add(polarisCli.getHome());
+            argumentListBuilder.addTokenized(polarisArguments);
 
-                if (exitCode > 0) {
-                    return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris failed with exit code: " + exitCode));
-                }
+            final Integer exitCode = launcher.launch()
+                                         .cmds(argumentListBuilder)
+                                         .envs(intEnvironmentVariables.getVariables())
+                                         .pwd(workspace)
+                                         .stdout(listener)
+                                         .quiet(true)
+                                         .join();
 
-                return SubStepResponse.SUCCESS(exitCode);
-            } else {
-                return SubStepResponse.FAILURE(previousResponse);
+            if (exitCode > 0) {
+                return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris failed with exit code: " + exitCode));
             }
+
+            return SubStepResponse.SUCCESS(exitCode);
         } catch (final Exception e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();

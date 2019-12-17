@@ -38,10 +38,9 @@ import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
-import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCliToolInstallation;
+import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.ParsePolarisArguments;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
@@ -122,9 +121,9 @@ public class PolarisBuildStep extends Builder {
             throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
         }
 
-        PolarisCliToolInstallation polarisCliToolInstallation = getPolarisCliInstallation()
-                                                                    .orElseThrow(() -> new AbortException(
-                                                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
+        PolarisCli polarisCli = getPolarisCliInstallation()
+                                    .orElseThrow(() -> new AbortException(
+                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
         final Node node = build.getBuiltOn();
         if (node == null) {
             throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
@@ -132,24 +131,22 @@ public class PolarisBuildStep extends Builder {
 
         final IntEnvironmentVariables intEnvironmentVariables = new IntEnvironmentVariables(false);
         final EnvVars envVars = build.getEnvironment(listener);
-        polarisCliToolInstallation = polarisCliToolInstallation.forEnvironment(envVars);
-        polarisCliToolInstallation = polarisCliToolInstallation.forNode(node, listener);
+        polarisCli = polarisCli.forEnvironment(envVars);
+        polarisCli = polarisCli.forNode(node, listener);
         intEnvironmentVariables.putAll(envVars);
         logger.setLogLevel(intEnvironmentVariables);
 
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
-        final ParsePolarisArguments parsePolarisArguments = new ParsePolarisArguments(logger, intEnvironmentVariables, polarisCliToolInstallation, polarisArguments);
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener);
+        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener, polarisCli, polarisArguments);
 
         return StepWorkflow.first(createPolarisEnvironment)
-                   .then(parsePolarisArguments)
                    .then(executePolarisCli)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));
     }
 
-    private Optional<PolarisCliToolInstallation> getPolarisCliInstallation() {
-        final ToolDescriptor<PolarisCliToolInstallation> toolDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.DescriptorImpl.class);
+    private Optional<PolarisCli> getPolarisCliInstallation() {
+        final ToolDescriptor<PolarisCli> toolDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
 
         if (toolDescriptor == null) {
             return Optional.empty();
@@ -194,15 +191,15 @@ public class PolarisBuildStep extends Builder {
             load();
         }
 
-        public ListBoxModel doFillPolarisCliInstallationHomeItems() {
-            final PolarisCliToolInstallation.DescriptorImpl polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCliToolInstallation.DescriptorImpl.class);
+        public ListBoxModel doFillPolarisCliNameItems() {
+            final PolarisCli.DescriptorImpl polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
 
             if (polarisCliToolInstallationDescriptor == null) {
                 return new ListBoxModel();
             }
 
             return Stream.of(polarisCliToolInstallationDescriptor.getInstallations())
-                       .map(PolarisCliToolInstallation::getName)
+                       .map(PolarisCli::getName)
                        .map(ListBoxModel.Option::new)
                        .collect(Collectors.toCollection(ListBoxModel::new));
         }

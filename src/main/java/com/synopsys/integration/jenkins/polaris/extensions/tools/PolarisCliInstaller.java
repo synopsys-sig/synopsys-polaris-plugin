@@ -30,6 +30,7 @@ import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.substeps.FindOrInstallPolarisCli;
+import com.synopsys.integration.polaris.common.rest.AccessTokenPolarisHttpClient;
 
 import hudson.AbortException;
 import hudson.Extension;
@@ -42,9 +43,9 @@ import hudson.tools.ToolInstaller;
 import hudson.tools.ToolInstallerDescriptor;
 import jenkins.model.GlobalConfiguration;
 
-public class PolarisCliToolInstaller extends ToolInstaller {
+public class PolarisCliInstaller extends ToolInstaller {
     @DataBoundConstructor
-    public PolarisCliToolInstaller(final String label) {
+    public PolarisCliInstaller(final String label) {
         super(label);
     }
 
@@ -63,7 +64,11 @@ public class PolarisCliToolInstaller extends ToolInstaller {
             throw new AbortException("Cannot install Polaris CLI Installation" + tool.getName() + " because node " + node.getDisplayName() + " is not connected or offline");
         }
 
-        final FindOrInstallPolarisCli findOrInstallPolarisCli = new FindOrInstallPolarisCli(jenkinsIntLogger, polarisGlobalConfig, preferredLocation(tool, node).getRemote());
+        final FilePath installLocation = preferredLocation(tool, node);
+        installLocation.mkdirs();
+
+        final AccessTokenPolarisHttpClient polarisHttpClient = polarisGlobalConfig.getPolarisServerConfig().createPolarisHttpClient(jenkinsIntLogger);
+        final FindOrInstallPolarisCli findOrInstallPolarisCli = FindOrInstallPolarisCli.getConnectionDetailsFromHttpClient(jenkinsIntLogger, polarisHttpClient, installLocation.getRemote());
 
         try {
             final String polarisCliRemotePath = virtualChannel.call(findOrInstallPolarisCli);
@@ -74,7 +79,7 @@ public class PolarisCliToolInstaller extends ToolInstaller {
     }
 
     @Extension
-    public static final class DescriptorImpl extends ToolInstallerDescriptor<PolarisCliToolInstaller> {
+    public static final class DescriptorImpl extends ToolInstallerDescriptor<PolarisCliInstaller> {
         @Override
         public String getDisplayName() {
             return "Install from Polaris";
@@ -82,7 +87,7 @@ public class PolarisCliToolInstaller extends ToolInstaller {
 
         @Override
         public boolean isApplicable(final Class<? extends ToolInstallation> toolType) {
-            return toolType == PolarisCliToolInstallation.class;
+            return toolType == PolarisCli.class;
         }
     }
 
