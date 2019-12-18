@@ -24,20 +24,16 @@ package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
-import com.synopsys.integration.jenkins.extensions.JenkinsSelectBoxEnum;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
@@ -58,7 +54,6 @@ import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
-import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.util.ListBoxModel;
 
@@ -71,19 +66,12 @@ public class PolarisBuildStep extends Builder {
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
     private final String polarisArguments;
 
-    @HelpMarkdown("Wait for the Polaris static analysis to conclude to perform actions based on issues discovered.")
-    private final boolean waitForIssues;
-
-    @Nullable
-    @HelpMarkdown("Specify the build status to set if issues are found in the configured view.")
-    private final ChangeBuildStatusTo buildStatusOnProblems;
-
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments /*final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues*/) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
-        this.buildStatusOnProblems = buildStatusForIssues;
-        this.waitForIssues = waitForIssues;
+        /*this.buildStatusOnProblems = buildStatusForIssues;
+        this.waitForIssues = waitForIssues;*/
     }
 
     public String getPolarisArguments() {
@@ -92,14 +80,6 @@ public class PolarisBuildStep extends Builder {
 
     public String getPolarisCliName() {
         return polarisCliName;
-    }
-
-    public ChangeBuildStatusTo getBuildStatusOnProblems() {
-        return buildStatusOnProblems;
-    }
-
-    public boolean getWaitForIssues() {
-        return waitForIssues;
     }
 
     @Override
@@ -121,7 +101,7 @@ public class PolarisBuildStep extends Builder {
             throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
         }
 
-        PolarisCli polarisCli = getPolarisCliInstallation()
+        PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
                                         "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
         final Node node = build.getBuiltOn();
@@ -145,18 +125,6 @@ public class PolarisBuildStep extends Builder {
                    .handleResponse(response -> afterPerform(logger, response, build));
     }
 
-    private Optional<PolarisCli> getPolarisCliInstallation() {
-        final ToolDescriptor<PolarisCli> toolDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
-
-        if (toolDescriptor == null) {
-            return Optional.empty();
-        }
-
-        return Stream.of(toolDescriptor.getInstallations())
-                   .filter(installation -> polarisCliName.equals(installation.getName()))
-                   .findFirst();
-    }
-
     private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
         final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
         try {
@@ -164,7 +132,7 @@ public class PolarisBuildStep extends Builder {
                 throw stepWorkflowResponse.getException();
             }
         } catch (final InterruptedException e) {
-            logger.error("[ERROR] Synopsys Coverity thread was interrupted.", e);
+            logger.error("[ERROR] Synopsys Polaris thread was interrupted.", e);
             build.setResult(Result.ABORTED);
             Thread.currentThread().interrupt();
         } catch (final IntegrationException e) {
@@ -202,10 +170,6 @@ public class PolarisBuildStep extends Builder {
                        .map(PolarisCli::getName)
                        .map(ListBoxModel.Option::new)
                        .collect(Collectors.toCollection(ListBoxModel::new));
-        }
-
-        public ListBoxModel doFillBuildStatusOnProblemsItems() {
-            return JenkinsSelectBoxEnum.toListBoxModel(ChangeBuildStatusTo.values());
         }
 
         @Override

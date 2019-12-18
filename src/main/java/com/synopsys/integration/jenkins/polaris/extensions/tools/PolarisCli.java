@@ -25,6 +25,8 @@ package com.synopsys.integration.jenkins.polaris.extensions.tools;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
@@ -51,6 +53,18 @@ public class PolarisCli extends ToolInstallation implements NodeSpecific<Polaris
         super(Util.fixEmptyAndTrim(name), Util.fixEmptyAndTrim(home), properties);
     }
 
+    public static Optional<PolarisCli> findInstanceWithName(@Nonnull final String polarisCliName) {
+        final ToolDescriptor<PolarisCli> toolDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
+
+        if (toolDescriptor == null) {
+            return Optional.empty();
+        }
+
+        return Stream.of(toolDescriptor.getInstallations())
+                   .filter(installation -> polarisCliName.equals(installation.getName()))
+                   .findFirst();
+    }
+
     @Override
     public PolarisCli forNode(@Nonnull final Node node, final TaskListener log) throws IOException, InterruptedException {
         return new PolarisCli(getName(), translateFor(node, log), getProperties().toList());
@@ -72,6 +86,18 @@ public class PolarisCli extends ToolInstallation implements NodeSpecific<Polaris
         @Override
         public String getDisplayName() {
             return "Polaris CLI";
+        }
+
+        @Override
+        public PolarisCli[] getInstallations() {
+            load();
+            return super.getInstallations();
+        }
+
+        @Override
+        public void setInstallations(final PolarisCli... installations) {
+            super.setInstallations(installations);
+            save();
         }
 
         @Override

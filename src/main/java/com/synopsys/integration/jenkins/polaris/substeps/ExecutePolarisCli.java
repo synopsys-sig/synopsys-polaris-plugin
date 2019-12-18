@@ -22,6 +22,8 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.AbstractSupplyingSubStep;
@@ -54,6 +56,11 @@ public class ExecutePolarisCli extends AbstractSupplyingSubStep<Integer> {
     @Override
     public SubStepResponse<Integer> run() {
         try {
+            final String polarisCliHome = polarisCli.getHome();
+            if (StringUtils.isBlank(polarisCliHome)) {
+                return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris executable could not be found for Polaris CLI installation with name " + polarisCli.getName()));
+            }
+
             final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
             argumentListBuilder.add(polarisCli.getHome());
             argumentListBuilder.addTokenized(polarisArguments);
