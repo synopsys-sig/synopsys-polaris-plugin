@@ -3,9 +3,13 @@ package com.synopsys.integration.jenkins.polaris.extensions.global;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.CharArrayReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -43,11 +47,22 @@ import jenkins.model.Jenkins;
 @PrepareForTest({SynopsysCredentialsHelper.class, PolarisServerConfig.class})
 public class PolarisGlobalConfigTest {
 
-    public static final String POLARIS_URL = "https://polaris.domain.com";
-    public static final String POLARIS_CREDENTIALS_ID = "123";
-    public static final String POLARIS_TIMEOUT_STRING = "30";
-    public static final int POLARIS_TIMEOUT_INT = 30;
-    public static final String CONFIG_XML_CONTENTS = "abc";
+    private static final String POLARIS_URL = "https://polaris.domain.com";
+    private static final String POLARIS_CREDENTIALS_ID = "123";
+    private static final String POLARIS_TIMEOUT_STRING = "30";
+    private static final int POLARIS_TIMEOUT_INT = 30;
+    private static final String CONFIG_XML_CONTENTS = "<?xml version='1.0' encoding='UTF-8'?>\n"
+                                         + "<com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig plugin=\"synopsys-polaris@1.0.0-SNAPSHOT\">\n"
+                                         + "  <polarisUrl>https://dev01.dev.polaris.synopsys.com</polarisUrl>\n"
+                                         + "  <polarisCredentialsId>0424ba25-4607-4a81-a809-0220c44d0fc1</polarisCredentialsId>\n"
+                                         + "  <polarisTimeout>120</polarisTimeout>\n"
+                                         + "</com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig>";
+    private static final String CONFIG_XML_CONTENTS_EXPECTED = "<?xml version='1.0' encoding='UTF-8'?>\n"
+                                                                   + "<com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig>\n"
+                                                                   + "  <polarisUrl>https://dev01.dev.polaris.synopsys.com</polarisUrl>\n"
+                                                                   + "  <polarisCredentialsId>0424ba25-4607-4a81-a809-0220c44d0fc1</polarisCredentialsId>\n"
+                                                                   + "  <polarisTimeout>120</polarisTimeout>\n"
+                                                                   + "</com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig>";
     @Rule
     public JenkinsRule jenkinsRule = new JenkinsRule();
 
@@ -102,5 +117,37 @@ public class PolarisGlobalConfigTest {
         detectGlobalConfig.doConfigDotXml(req, rsp);
 
         assertEquals(CONFIG_XML_CONTENTS, byteArrayOutputStream.toString());
+    }
+
+    @Test
+    public void testConfigDotXmlPost() throws ServletException, ParserConfigurationException, IOException {
+
+        final PolarisGlobalConfig detectGlobalConfig = new PolarisGlobalConfig();
+        final StaplerRequest req = Mockito.mock(StaplerRequest.class);
+        final StaplerResponse rsp = Mockito.mock(StaplerResponse.class);
+        Mockito.when(req.getMethod()).thenReturn("POST");
+
+//        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//        final ServletOutputStream servletOutputStream = new FilterServletOutputStream(byteArrayOutputStream);
+//        Mockito.when(rsp.getOutputStream()).thenReturn(servletOutputStream);
+//
+//        final File configDotXmlFile = new File(Jenkins.getInstance().getRootDir(),PolarisGlobalConfig.class.getName() + ".xml");
+//        FileUtils.write(configDotXmlFile, CONFIG_XML_CONTENTS, StandardCharsets.UTF_8);
+
+        // req.getReader()
+        final BufferedReader reader = new BufferedReader(new StringReader(CONFIG_XML_CONTENTS));
+        Mockito.when(req.getReader()).thenReturn(reader);
+
+        final String rootDirPath = Jenkins.getInstance().getRootDir().getAbsolutePath();
+
+        detectGlobalConfig.doConfigDotXml(req, rsp);
+
+        System.out.printf("Read back: %s\n", rsp);
+//        assertEquals(CONFIG_XML_CONTENTS, byteArrayOutputStream.toString());
+
+        final File configFile = new File(Jenkins.getInstance().getRootDir(), PolarisGlobalConfig.class.getName() + ".xml");
+        final String configFileString = FileUtils.readFileToString(configFile, StandardCharsets.UTF_8);
+        System.out.printf("plugin config xml: %s\n", configFileString);
+        assertEquals(CONFIG_XML_CONTENTS_EXPECTED, configFileString);
     }
 }
