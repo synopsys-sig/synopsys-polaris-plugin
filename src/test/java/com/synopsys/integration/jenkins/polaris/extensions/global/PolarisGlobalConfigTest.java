@@ -39,6 +39,7 @@ import com.synopsys.integration.polaris.common.rest.AccessTokenPolarisHttpClient
 import com.synopsys.integration.rest.client.ConnectionResult;
 
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 
 @PowerMockIgnore({"javax.crypto.*", "javax.net.ssl.*"})
@@ -144,5 +145,15 @@ public class PolarisGlobalConfigTest {
         assertTrue(pluginConfigFile.exists());
         final String pluginConfigFileContents = FileUtils.readFileToString(pluginConfigFile, StandardCharsets.UTF_8);
         assertEquals(CONFIG_XML_CONTENTS, pluginConfigFileContents);
+    }
+
+    @Test
+    public void testDoFillPolarisCredentialsIdItems() {
+        final PolarisGlobalConfig detectGlobalConfig = new PolarisGlobalConfig();
+        final ListBoxModel listBoxModel = detectGlobalConfig.doFillPolarisCredentialsIdItems();
+        System.out.printf("%s\n", listBoxModel.toString());
+        assertEquals("- none -", listBoxModel.get(0).name);
+        assertEquals("", listBoxModel.get(0).value);
+        assertEquals(false, listBoxModel.get(0).selected);
     }
 }
