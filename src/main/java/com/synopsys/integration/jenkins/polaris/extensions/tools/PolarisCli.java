@@ -1,7 +1,7 @@
 /**
  * synopsys-polaris
  *
- * Copyright (c) 2019 Synopsys, Inc.
+ * Copyright (c) 2020 Synopsys, Inc.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -53,7 +53,7 @@ public class PolarisCli extends ToolInstallation implements NodeSpecific<Polaris
         super(Util.fixEmptyAndTrim(name), Util.fixEmptyAndTrim(home), properties);
     }
 
-    public static Optional<PolarisCli> findInstanceWithName(@Nonnull final String polarisCliName) {
+    public static Optional<PolarisCli> findInstanceWithName(final String polarisCliName) {
         final ToolDescriptor<PolarisCli> toolDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
 
         if (toolDescriptor == null) {
@@ -61,7 +61,7 @@ public class PolarisCli extends ToolInstallation implements NodeSpecific<Polaris
         }
 
         return Stream.of(toolDescriptor.getInstallations())
-                   .filter(installation -> polarisCliName.equals(installation.getName()))
+                   .filter(installation -> installation.getName().equals(polarisCliName))
                    .findFirst();
     }
 
@@ -77,7 +77,8 @@ public class PolarisCli extends ToolInstallation implements NodeSpecific<Polaris
 
     @Override
     public void buildEnvVars(final EnvVars env) {
-        env.putIfNotNull("PATH+POLARIS", getHome());
+        // This is what the gradle plugin does, so it's probably good enough for us --rotte (JAN 2020)
+        env.putIfNotNull("PATH+POLARIS", getHome() + "/bin");
     }
 
     @Extension

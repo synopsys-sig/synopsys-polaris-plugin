@@ -1,7 +1,7 @@
 /**
  * synopsys-polaris
  *
- * Copyright (c) 2019 Synopsys, Inc.
+ * Copyright (c) 2020 Synopsys, Inc.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -22,11 +22,8 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
-import com.synopsys.integration.stepworkflow.AbstractSupplyingSubStep;
+import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
@@ -35,35 +32,39 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 
-public class ExecutePolarisCli extends AbstractSupplyingSubStep<Integer> {
+public class ExecutePolarisCli implements SubStep<String, Integer> {
     private final Launcher launcher;
     private final IntEnvironmentVariables intEnvironmentVariables;
     private final FilePath workspace;
     private final TaskListener listener;
-    private final PolarisCli polarisCli;
     private final String polarisArguments;
+    private final String polarisCliHome;
 
-    public ExecutePolarisCli(final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener, final PolarisCli polarisCli,
-        final String polarisArguments) {
+    public ExecutePolarisCli(final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener, final String polarisArguments, final String polarisCliHome) {
         this.launcher = launcher;
         this.intEnvironmentVariables = intEnvironmentVariables;
         this.workspace = workspace;
         this.listener = listener;
-        this.polarisCli = polarisCli;
         this.polarisArguments = polarisArguments;
+        this.polarisCliHome = polarisCliHome;
     }
 
     @Override
-    public SubStepResponse<Integer> run() {
-        try {
-            final String polarisCliHome = polarisCli.getHome();
-            if (StringUtils.isBlank(polarisCliHome)) {
-                return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris executable could not be found for Polaris CLI installation with name " + polarisCli.getName()));
-            }
+    public SubStepResponse<Integer> run(final SubStepResponse<? extends String> previousResponse) {
+        if (previousResponse.isFailure() || !previousResponse.hasData()) {
+            return SubStepResponse.FAILURE(previousResponse);
+        }
 
+        final String pathToPolarisCli = previousResponse.getData();
+
+        try {
             final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
-            argumentListBuilder.add(polarisCli.getHome());
+            argumentListBuilder.add(pathToPolarisCli);
             argumentListBuilder.addTokenized(polarisArguments);
+
+            if (argumentListBuilder.toList().stream().noneMatch(argument -> argument.contains("install.coverity.directory"))) {
+                argumentListBuilder.add("--co install.coverity.directory " + polarisCliHome);
+            }
 
             final Integer exitCode = launcher.launch()
                                          .cmds(argumentListBuilder)

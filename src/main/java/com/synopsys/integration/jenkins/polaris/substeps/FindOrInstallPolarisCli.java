@@ -1,7 +1,7 @@
 /**
  * synopsys-polaris
  *
- * Copyright (c) 2019 Synopsys, Inc.
+ * Copyright (c) 2020 Synopsys, Inc.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -69,6 +69,7 @@ public class FindOrInstallPolarisCli implements Callable<String, IntegrationExce
         this.installationLocation = installationLocation;
     }
 
+    // We'd love to just pass the httpclient through but it's not serializable and it's probably not worthwhile to make a serializable class just for this -- rotte DEC 2019
     public static FindOrInstallPolarisCli getConnectionDetailsFromHttpClient(final JenkinsIntLogger jenkinsIntLogger, final AccessTokenPolarisHttpClient accessTokenPolarisHttpClient, final String installationLocation) {
         final ProxyInfo proxyInfo = accessTokenPolarisHttpClient.getProxyInfo();
         return new FindOrInstallPolarisCli(
@@ -106,7 +107,7 @@ public class FindOrInstallPolarisCli implements Callable<String, IntegrationExce
 
             final PolarisDownloadUtility polarisDownloadUtility = new PolarisDownloadUtility(jenkinsIntLogger, operatingSystemType, intHttpClient, cleanupZipExpander, polarisServerUrl, installLocation);
 
-            return polarisDownloadUtility.retrievePolarisCliExecutablePath().orElseThrow(() -> new PolarisIntegrationException("The Polaris CLI could not be found or installed correctly."));
+            return polarisDownloadUtility.getOrDownloadPolarisCliHome().orElseThrow(() -> new PolarisIntegrationException("The Polaris CLI could not be found or installed correctly."));
         } catch (final IOException | IllegalArgumentException ex) {
             throw new PolarisIntegrationException(ex);
         }

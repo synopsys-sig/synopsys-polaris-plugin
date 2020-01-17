@@ -1,7 +1,7 @@
 /**
  * synopsys-polaris
  *
- * Copyright (c) 2019 Synopsys, Inc.
+ * Copyright (c) 2020 Synopsys, Inc.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -47,7 +47,9 @@ import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
+import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
+import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
 import hudson.AbortException;
@@ -171,9 +173,11 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
             logger.setLogLevel(intEnvironmentVariables);
 
             final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
-            final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener, polarisCli, arguments);
+            final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
+            final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener, arguments, polarisCli.getHome());
 
             return StepWorkflow.first(createPolarisEnvironment)
+                       .then(RemoteSubStep.of(node.getChannel(), getPathToPolarisCli))
                        .then(executePolarisCli)
                        .run()
                        .getDataOrThrowException();
