@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Optional;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +42,7 @@ public class PolarisBuildStepTest {
     public JenkinsRule jenkinsRule = new JenkinsRule();
 
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void testPerform() throws IOException, InterruptedException {
         final AbstractBuild<FreeStyleProject, FreeStyleBuild> build = PowerMockito.mock(AbstractBuild.class);
         final Launcher launcher = PowerMockito.mock(Launcher.class);
         final BuildListener buildListener = PowerMockito.mock(BuildListener.class);
