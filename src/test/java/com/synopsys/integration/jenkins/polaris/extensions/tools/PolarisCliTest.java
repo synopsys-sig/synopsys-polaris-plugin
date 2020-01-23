@@ -59,22 +59,5 @@ public class PolarisCliTest {
         final ZipExtractionInstaller zipExtractionInstaller = (ZipExtractionInstaller)installSourceProperty.installers.get(0);
         assertEquals(INSTALLER_URL, zipExtractionInstaller.getUrl());
         assertEquals(CLI_LABEL, zipExtractionInstaller.getLabel());
-
-        //////// TODO: Get the code below working, and split it out to separate test
-//        PowerMockito.mockStatic(ToolInstallation.class);
-//        final DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> descriptors = Mockito.mock(DescriptorExtensionList.class);
-//        Mockito.when(ToolInstallation.all()).thenReturn(descriptors);
-//
-//        PowerMockito.mockStatic(Jenkins.class);
-//        final Jenkins jenkins = Mockito.mock(Jenkins.class);
-//        Mockito.when(Jenkins.getInstance()).thenReturn(jenkins);
-//        Mockito.when(jenkins.getDescriptorOrDie(Mockito.any(Class.class))).thenReturn(polarisCli.getDescriptor());
-//
-//        PolarisCli.DescriptorImpl polarisCliDescriptorImpl = (PolarisCli.DescriptorImpl)polarisCli.getDescriptor();
-//        Mockito.when(descriptors.get(PolarisCli.DescriptorImpl.class)).thenReturn(polarisCliDescriptorImpl);
-//
-//        final Optional<PolarisCli> foundPolarisCli = polarisCli.findInstanceWithName(CLI_NAME);
-//        assertEquals(CLI_NAME, polarisCli.getName());
-//        assertEquals(CLI_HOME, polarisCli.getHome());
     }
 }
