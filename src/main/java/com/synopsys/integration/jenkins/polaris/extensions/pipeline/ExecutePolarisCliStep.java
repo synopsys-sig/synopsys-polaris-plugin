@@ -101,6 +101,8 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
     @Extension(optional = true)
     public static final class DescriptorImpl extends StepDescriptor {
         public DescriptorImpl() {
+            // Nothing to do here, but we must provide an explicit default constructor or else some versions of the Pipeline syntax generator will break
+            // -rotte JAN 2020
         }
 
         public ListBoxModel doFillPolarisCliItems() {
