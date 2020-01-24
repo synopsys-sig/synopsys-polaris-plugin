@@ -48,6 +48,7 @@ import jenkins.model.Jenkins;
 public class PolarisGlobalConfigTest {
 
     private static final String POLARIS_URL = "https://polaris.domain.com";
+    private static final String INVALID_URL = "polaris.domain.com";
     private static final String POLARIS_CREDENTIALS_ID = "123";
     private static final String POLARIS_TIMEOUT_STRING = "30";
     private static final int POLARIS_TIMEOUT_INT = 30;
@@ -57,6 +58,8 @@ public class PolarisGlobalConfigTest {
                                                                    + "  <polarisCredentialsId>0424ba25-4607-4a81-a809-0220c44d0fc1</polarisCredentialsId>\n"
                                                                    + "  <polarisTimeout>120</polarisTimeout>\n"
                                                                    + "</com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig>";
+    public static final String POLARIS_TOKEN = "testToken";
+
     @Rule
     public JenkinsRule jenkinsRule = new JenkinsRule();
 
@@ -65,7 +68,7 @@ public class PolarisGlobalConfigTest {
 
         // This config should be found to be invalid (invalid URL)
         final PolarisGlobalConfig detectGlobalConfig = new PolarisGlobalConfig();
-        final FormValidation formValidation = detectGlobalConfig.doTestPolarisConnection("blackduck.domain.com", "123", "30");
+        final FormValidation formValidation = detectGlobalConfig.doTestPolarisConnection(INVALID_URL, POLARIS_CREDENTIALS_ID, POLARIS_TIMEOUT_STRING);
 
         assertEquals(FormValidation.Kind.ERROR, formValidation.kind);
         assertTrue(formValidation.getMessage().contains("valid"));
@@ -77,7 +80,7 @@ public class PolarisGlobalConfigTest {
 
         // This config should be found to be invalid (invalid credentials ID)
         final PolarisGlobalConfig detectGlobalConfig = new PolarisGlobalConfig();
-        final FormValidation formValidation = detectGlobalConfig.doTestPolarisConnection("https://blackduck.domain.com", "123", "30");
+        final FormValidation formValidation = detectGlobalConfig.doTestPolarisConnection(POLARIS_URL, POLARIS_CREDENTIALS_ID, POLARIS_TIMEOUT_STRING);
 
         assertEquals(FormValidation.Kind.ERROR, formValidation.kind);
         assertTrue(formValidation.getMessage().contains("token"));
@@ -86,7 +89,7 @@ public class PolarisGlobalConfigTest {
     @Test
     public void testValidConfig() {
         PowerMockito.mockStatic(SynopsysCredentialsHelper.class);
-        Mockito.when(SynopsysCredentialsHelper.getApiTokenByCredentialsId(POLARIS_CREDENTIALS_ID)).thenReturn(Optional.of("testToken"));
+        Mockito.when(SynopsysCredentialsHelper.getApiTokenByCredentialsId(POLARIS_CREDENTIALS_ID)).thenReturn(Optional.of(POLARIS_TOKEN));
 
         final PolarisServerConfigBuilder polarisServerConfigBuilder = Mockito.mock(PolarisServerConfigBuilder.class);
         PowerMockito.mockStatic(PolarisServerConfig.class);
@@ -151,7 +154,6 @@ public class PolarisGlobalConfigTest {
     public void testDoFillPolarisCredentialsIdItems() {
         final PolarisGlobalConfig detectGlobalConfig = new PolarisGlobalConfig();
         final ListBoxModel listBoxModel = detectGlobalConfig.doFillPolarisCredentialsIdItems();
-        System.out.printf("%s\n", listBoxModel.toString());
         assertEquals("- none -", listBoxModel.get(0).name);
         assertEquals("", listBoxModel.get(0).value);
         assertEquals(false, listBoxModel.get(0).selected);
