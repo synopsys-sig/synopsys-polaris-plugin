@@ -91,8 +91,9 @@ public class PolarisBuildStepTest {
         PowerMockito.mockStatic(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName("testPolarisCliName")).thenReturn(Optional.of(polarisCli));
 
-        PowerMockito.mockStatic(StepWorkflow.class);
+
         final StepWorkflow.Builder stepWorkflowBuilder = Mockito.mock(StepWorkflow.Builder.class);
+        PowerMockito.mockStatic(StepWorkflow.class);
         Mockito.when(StepWorkflow.first(Mockito.any(CreatePolarisEnvironment.class))).thenReturn(stepWorkflowBuilder);
         Mockito.when(stepWorkflowBuilder.then(Mockito.any(RemoteSubStep.class))).thenReturn(stepWorkflowBuilder);
         Mockito.when(stepWorkflowBuilder.then(Mockito.any(ExecutePolarisCli.class))).thenReturn(stepWorkflowBuilder);
