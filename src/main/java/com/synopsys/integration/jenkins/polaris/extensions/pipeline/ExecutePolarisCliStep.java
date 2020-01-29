@@ -176,10 +176,10 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
 
             final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
             final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-            final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener, arguments, polarisCli.getHome());
+            final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, arguments);
 
             return StepWorkflow.first(createPolarisEnvironment)
-                       .then(RemoteSubStep.of(node.getChannel(), getPathToPolarisCli))
+                       .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
                        .then(executePolarisCli)
                        .run()
                        .getDataOrThrowException();
