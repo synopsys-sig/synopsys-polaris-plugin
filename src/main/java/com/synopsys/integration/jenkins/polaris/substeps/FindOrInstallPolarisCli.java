@@ -26,8 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.jenkinsci.remoting.RoleChecker;
-
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.cli.PolarisDownloadUtility;
@@ -40,9 +38,9 @@ import com.synopsys.integration.rest.proxy.ProxyInfoBuilder;
 import com.synopsys.integration.util.CleanupZipExpander;
 import com.synopsys.integration.util.OperatingSystemType;
 
-import hudson.remoting.Callable;
+import jenkins.security.MasterToSlaveCallable;
 
-public class FindOrInstallPolarisCli implements Callable<String, IntegrationException> {
+public class FindOrInstallPolarisCli extends MasterToSlaveCallable<String, IntegrationException> {
     private static final long serialVersionUID = 6457474109970149144L;
     private final JenkinsIntLogger jenkinsIntLogger;
     private final String polarisServerUrl;
@@ -113,8 +111,4 @@ public class FindOrInstallPolarisCli implements Callable<String, IntegrationExce
         }
     }
 
-    @Override
-    public void checkRoles(final RoleChecker checker) throws SecurityException {
-
-    }
 }
