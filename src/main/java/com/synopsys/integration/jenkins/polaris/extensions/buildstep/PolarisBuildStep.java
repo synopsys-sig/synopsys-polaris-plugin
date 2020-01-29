@@ -33,6 +33,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
+import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
@@ -68,12 +69,18 @@ public class PolarisBuildStep extends Builder {
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
     private final String polarisArguments;
 
+    @HelpMarkdown("Check this box to wait for issues ")
+    private final Boolean waitForIssues;
+
+    @HelpMarkdown("The build status to set the project to if there are issues")
+    private final ChangeBuildStatusTo buildStatusForIssues;
+
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments /*final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues*/) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
-        /*this.buildStatusOnProblems = buildStatusForIssues;
-        this.waitForIssues = waitForIssues;*/
+        this.buildStatusForIssues = buildStatusForIssues;
+        this.waitForIssues = waitForIssues;
     }
 
     public String getPolarisArguments() {
@@ -82,6 +89,14 @@ public class PolarisBuildStep extends Builder {
 
     public String getPolarisCliName() {
         return polarisCliName;
+    }
+
+    public ChangeBuildStatusTo getBuildStatusForIssues() {
+        return buildStatusForIssues;
+    }
+
+    public Boolean getWaitForIssues() {
+        return waitForIssues;
     }
 
     @Override
