@@ -26,11 +26,10 @@ class Terms {
     val termMap = mutableMapOf(
             "company_name" to "Synopsys",
             "division_name" to "Synopsys SIG",
-            "binary_repo_type" to "Artifactory",
             "solution_name" to "Synopsys Polaris for Jenkins",
             "project_name" to "synopsys-polaris-plugin",
             "source_repo_organization" to "synopsys-sig",
-            "polaris_product_name" to "Polaris",
+            "polaris_product_name" to "Synopsys Polaris",
             "plugin_config_header" to "Synopsys Polaris"
     )
 
