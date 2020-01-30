@@ -120,10 +120,10 @@ public class PolarisBuildStep extends Builder {
 
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(launcher, intEnvironmentVariables, workspace, listener, polarisArguments, polarisCli.getHome());
+        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
 
         return StepWorkflow.first(createPolarisEnvironment)
-                   .then(RemoteSubStep.of(node.getChannel(), getPathToPolarisCli))
+                   .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
                    .then(executePolarisCli)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));

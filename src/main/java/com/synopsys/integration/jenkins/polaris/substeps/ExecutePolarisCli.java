@@ -22,6 +22,7 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
@@ -38,15 +39,15 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
     private final FilePath workspace;
     private final TaskListener listener;
     private final String polarisArguments;
-    private final String polarisCliHome;
+    private final JenkinsIntLogger logger;
 
-    public ExecutePolarisCli(final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener, final String polarisArguments, final String polarisCliHome) {
+    public ExecutePolarisCli(final JenkinsIntLogger logger, final Launcher launcher, final IntEnvironmentVariables intEnvironmentVariables, final FilePath workspace, final TaskListener listener, final String polarisArguments) {
+        this.logger = logger;
         this.launcher = launcher;
         this.intEnvironmentVariables = intEnvironmentVariables;
         this.workspace = workspace;
         this.listener = listener;
         this.polarisArguments = polarisArguments;
-        this.polarisCliHome = polarisCliHome;
     }
 
     @Override
@@ -61,10 +62,7 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
             final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
             argumentListBuilder.add(pathToPolarisCli);
             argumentListBuilder.addTokenized(polarisArguments);
-
-            if (argumentListBuilder.toList().stream().noneMatch(argument -> argument.contains("install.coverity.directory"))) {
-                argumentListBuilder.add("--co install.coverity.directory " + polarisCliHome);
-            }
+            logger.alwaysLog("Executing " + argumentListBuilder.toString());
 
             final Integer exitCode = launcher.launch()
                                          .cmds(argumentListBuilder)
