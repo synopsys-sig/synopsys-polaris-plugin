@@ -35,10 +35,16 @@ import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
+import com.synopsys.integration.jenkins.polaris.substeps.GetPolarisCliResponseModel;
+import com.synopsys.integration.jenkins.polaris.substeps.GetTotalIssueCount;
+import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
+import com.synopsys.integration.polaris.common.service.PolarisService;
+import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
@@ -59,6 +65,7 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.tools.ToolInstallation;
 import hudson.util.ListBoxModel;
+import jenkins.model.GlobalConfiguration;
 
 public class PolarisBuildStep extends Builder {
     public static final String DISPLAY_NAME = "Synopsys Polaris";
@@ -126,6 +133,15 @@ public class PolarisBuildStep extends Builder {
             throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
         }
 
+        final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
+        if (polarisGlobalConfig == null) {
+            throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
+        }
+
+        final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
+        final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
+        final PolarisService polarisService = polarisServicesFactory.createPolarisService();
+
         final IntEnvironmentVariables intEnvironmentVariables = new IntEnvironmentVariables(false);
         final EnvVars envVars = build.getEnvironment(listener);
         polarisCli = polarisCli.forEnvironment(envVars);
@@ -136,15 +152,19 @@ public class PolarisBuildStep extends Builder {
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
         final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
+        final GetPolarisCliResponseModel getPolarisCliResponseModel = new GetPolarisCliResponseModel(logger, workspace.getRemote());
+        final GetTotalIssueCount getTotalIssueCount = new GetTotalIssueCount(logger, polarisService);
 
         return StepWorkflow.first(createPolarisEnvironment)
                    .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
                    .then(executePolarisCli)
+                   .andSometimes(RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseModel)).then(getTotalIssueCount).butOnlyIf(waitForIssues, Boolean.TRUE::equals)
+                   // TODO: This needs to be able to set the build status
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));
     }
 
-    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
+    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Object> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
         final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
         try {
             if (!wasSuccessful) {
