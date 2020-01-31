@@ -34,7 +34,7 @@ public class ExecutePolarisCliStepTest {
     private static final String TEST_POLARIS_HOME = "/tmp/polaris";
     public static final String TEST_POLARIS_ARGS = "testArgs";
 
-    // TODO: To improve this test (to test more of PolarisBuildStep.perform(), we could refactor PolarisBuildStep to:
+    // TODO: To improve this test (to test more of ExecutePolarisCliStep.Execution.run(), we could refactor ExecutePolarisCliStep to:
     // - Separate object creation (CreatePolarisEnvironment, GetPathToPolarisCli, ExecutePolarisCli) out of ExecutePolarisCliStep,
     //   so the objects can be mocked in this test.
     //   Then we can verify that they are created correctly, and verify that StepWorkflow.first().then().then().run().getDataOrThrowException() was all
