@@ -32,6 +32,7 @@ public class ExecutePolarisCliStepTest {
     private static final String WORKSPACE_REL_PATH = "out/test/PolarisBuildStepTest/testPerform/workspace";
     private static final String TEST_POLARIS_CLI_NAME = "testPolarisCliName";
     private static final String TEST_POLARIS_HOME = "/tmp/polaris";
+    public static final String TEST_POLARIS_ARGS = "testArgs";
 
     // TODO: To improve this test (to test more of PolarisBuildStep.perform(), we could refactor PolarisBuildStep to:
     // - Separate object creation (CreatePolarisEnvironment, GetPathToPolarisCli, ExecutePolarisCli) out of ExecutePolarisCliStep,
@@ -40,36 +41,30 @@ public class ExecutePolarisCliStepTest {
     //   done correctly (verify the arguments passed).
     @Test
     public void test() throws Exception {
-        final ExecutePolarisCliStep executePolarisCliStep = new ExecutePolarisCliStep("testArgs");
+        final ExecutePolarisCliStep executePolarisCliStep = new ExecutePolarisCliStep(TEST_POLARIS_ARGS);
         executePolarisCliStep.setPolarisCli(TEST_POLARIS_CLI_NAME);
 
         final StepContext stepContext = Mockito.mock(StepContext.class);
-        // node = context.get(Node.class);
         final Node node = Mockito.mock(Node.class);
         Mockito.when(stepContext.get(Node.class)).thenReturn(node);
-        // envVars = context.get(EnvVars.class);
         final EnvVars envVars = Mockito.mock(EnvVars.class);
         Mockito.when(stepContext.get(EnvVars.class)).thenReturn(envVars);
 
         final TaskListener listener = Mockito.mock(TaskListener.class);
-        // listener = context.get(TaskListener.class);
         Mockito.when(stepContext.get(TaskListener.class)).thenReturn(listener);
         final Launcher launcher = Mockito.mock(Launcher.class);
         final VirtualChannel virtualChannel = Mockito.mock(VirtualChannel.class);
         Mockito.when(launcher.getChannel()).thenReturn(virtualChannel);
         Mockito.when(stepContext.get(Launcher.class)).thenReturn(launcher);
 
-        // workspace = context.get(FilePath.class);
         final FilePath workspaceFilePath = new FilePath(new File(WORKSPACE_REL_PATH));
         Mockito.when(stepContext.get(FilePath.class)).thenReturn(workspaceFilePath);
         final ExecutePolarisCliStep.Execution stepExecution = (ExecutePolarisCliStep.Execution) executePolarisCliStep.start(stepContext);
 
-        // PolarisCli polarisCli = PolarisCli.findInstanceWithName(ExecutePolarisCliStep.this.polarisCli)
         final PolarisCli polarisCli = PowerMockito.mock(PolarisCli.class);
         PowerMockito.mockStatic(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName(TEST_POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
 
-        // polarisCli = polarisCli.forEnvironment(envVars);
         Mockito.when(polarisCli.forEnvironment(envVars)).thenReturn(polarisCli);
         Mockito.when(polarisCli.forNode(node, listener)).thenReturn(polarisCli);
         Mockito.when(polarisCli.getHome()).thenReturn(TEST_POLARIS_HOME);
