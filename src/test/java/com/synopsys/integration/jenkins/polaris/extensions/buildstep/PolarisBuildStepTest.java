@@ -37,9 +37,9 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 
-@PowerMockIgnore({"javax.crypto.*", "javax.net.ssl.*" })
+@PowerMockIgnore({ "javax.crypto.*", "javax.net.ssl.*" })
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({AbstractBuild.class, JDK.class, Launcher.class, Launcher.ProcStarter.class, PolarisCli.class, StepWorkflow.class })
+@PrepareForTest({ AbstractBuild.class, JDK.class, Launcher.class, Launcher.ProcStarter.class, PolarisCli.class, StepWorkflow.class })
 public class PolarisBuildStepTest {
     private static final String POLARIS_ARGUMENTS = "--detect.docker.passthrough.service.timeout=240000 --detect.cleanup=false --detect.source.path=$JAVA_HOME --detect.project.name=\"Test Project'\"";
     private static final String WORKSPACE_REL_PATH = "out/test/PolarisBuildStepTest/testPerform/workspace";
@@ -90,7 +90,6 @@ public class PolarisBuildStepTest {
         PowerMockito.mockStatic(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName("testPolarisCliName")).thenReturn(Optional.of(polarisCli));
 
-
         final StepWorkflow.Builder stepWorkflowBuilder = Mockito.mock(StepWorkflow.Builder.class);
         PowerMockito.mockStatic(StepWorkflow.class);
         Mockito.when(StepWorkflow.first(Mockito.any(CreatePolarisEnvironment.class))).thenReturn(stepWorkflowBuilder);
@@ -102,7 +101,7 @@ public class PolarisBuildStepTest {
 
         // Test
         final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS);
-        boolean result = polarisBuildStep.perform(build, launcher, buildListener);
+        final boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify
         assertTrue(result);
