@@ -128,8 +128,10 @@ public class PolarisBuildStepTest {
         Mockito.when(stepWorkflowBuilder.run()).thenReturn(stepWorkflowResponse);
         Mockito.when(stepWorkflowResponse.handleResponse(Mockito.any(ThrowingFunction.class))).thenReturn(true);
 
+        final WaitForIssues waitForIssues = Mockito.mock(WaitForIssues.class);
+
         // Test
-        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, null, false);
+        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, waitForIssues);
         boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify
@@ -142,7 +144,7 @@ public class PolarisBuildStepTest {
         Mockito.verify(stepWorkflowBuilder).then(Mockito.any(ExecutePolarisCli.class));
         Mockito.verify(stepWorkflowBuilder).andSometimes(Mockito.any(RemoteSubStep.class));
         Mockito.verify(conditionalBuilder).then(Mockito.any(GetTotalIssueCount.class));
-        Mockito.verify(conditionalBuilder).butOnlyIf(Mockito.any(Boolean.class), Mockito.any(Predicate.class));
+        Mockito.verify(conditionalBuilder).butOnlyIf(Mockito.any(WaitForIssues.class), Mockito.any(Predicate.class));
         Mockito.verify(stepWorkflowBuilder).run();
         Mockito.verify(stepWorkflowResponse).handleResponse(Mockito.any(ThrowingFunction.class));
     }

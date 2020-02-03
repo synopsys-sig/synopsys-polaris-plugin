@@ -31,6 +31,7 @@ import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
+import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.cli.model.IssueSummary;
 import com.synopsys.integration.polaris.common.cli.model.PolarisCliResponseModel;
 import com.synopsys.integration.polaris.common.cli.model.ScanInfo;
@@ -40,7 +41,7 @@ import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 
-public class GetTotalIssueCount implements SubStep<PolarisCliResponseModel, Integer> {
+public class GetTotalIssueCount implements SubStep<String, Integer> {
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
 
@@ -50,12 +51,13 @@ public class GetTotalIssueCount implements SubStep<PolarisCliResponseModel, Inte
     }
 
     @Override
-    public SubStepResponse<Integer> run(final SubStepResponse<? extends PolarisCliResponseModel> previousResponse) {
+    public SubStepResponse<Integer> run(final SubStepResponse<? extends String> previousResponse) {
         if (previousResponse.isFailure() || !previousResponse.hasData()) {
             return SubStepResponse.FAILURE(previousResponse);
         }
 
-        final PolarisCliResponseModel polarisCliResponseModel = previousResponse.getData();
+        final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
+        final PolarisCliResponseModel polarisCliResponseModel = polarisCliResponseUtility.getPolarisCliResponseModelFromString(previousResponse.getData());
         final IssueSummary issueSummary = polarisCliResponseModel.getIssueSummary();
         final ScanInfo scanInfo = polarisCliResponseModel.getScanInfo();
 

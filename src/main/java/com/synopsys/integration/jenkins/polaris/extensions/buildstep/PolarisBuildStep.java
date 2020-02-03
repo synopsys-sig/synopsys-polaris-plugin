@@ -24,6 +24,7 @@ package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +41,7 @@ import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.GetPolarisCliResponseModel;
+import com.synopsys.integration.jenkins.polaris.substeps.GetPolarisCliResponseContent;
 import com.synopsys.integration.jenkins.polaris.substeps.GetTotalIssueCount;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
 import com.synopsys.integration.polaris.common.service.PolarisService;
@@ -79,16 +80,12 @@ public class PolarisBuildStep extends Builder {
     private final String polarisArguments;
 
     @HelpMarkdown("Check this box to wait for issues ")
-    private final Boolean waitForIssues;
-
-    @HelpMarkdown("The build status to set the project to if there are issues")
-    private final ChangeBuildStatusTo buildStatusForIssues;
+    private final WaitForIssues waitForIssues;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final WaitForIssues waitForIssues) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
-        this.buildStatusForIssues = buildStatusForIssues;
         this.waitForIssues = waitForIssues;
     }
 
@@ -100,11 +97,7 @@ public class PolarisBuildStep extends Builder {
         return polarisCliName;
     }
 
-    public ChangeBuildStatusTo getBuildStatusForIssues() {
-        return buildStatusForIssues;
-    }
-
-    public Boolean getWaitForIssues() {
+    public WaitForIssues getWaitForIssues() {
         return waitForIssues;
     }
 
@@ -154,15 +147,15 @@ public class PolarisBuildStep extends Builder {
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
         final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
-        final GetPolarisCliResponseModel getPolarisCliResponseModel = new GetPolarisCliResponseModel(logger, workspace.getRemote());
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(logger, workspace.getRemote());
         final GetTotalIssueCount getTotalIssueCount = new GetTotalIssueCount(logger, polarisService);
         final VirtualChannel channel = launcher.getChannel();
 
         return StepWorkflow.first(createPolarisEnvironment)
                    .then(RemoteSubStep.of(channel, getPathToPolarisCli))
                    .then(executePolarisCli)
-                   .andSometimes(RemoteSubStep.of(channel, getPolarisCliResponseModel)).then(getTotalIssueCount).then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
-                   .butOnlyIf(waitForIssues, Boolean.TRUE::equals)
+                   .andSometimes(RemoteSubStep.of(channel, getPolarisCliResponseContent)).then(getTotalIssueCount).then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));
     }
@@ -187,13 +180,21 @@ public class PolarisBuildStep extends Builder {
     }
 
     private void failOnIssuesPresent(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
+        final ChangeBuildStatusTo buildStatusToSet;
+        if (waitForIssues == null) {
+            buildStatusToSet = ChangeBuildStatusTo.SUCCESS;
+        } else {
+            buildStatusToSet = waitForIssues.getBuildStatusForIssues();
+        }
+
         logger.alwaysLog("Polaris Issue Check");
-        logger.alwaysLog("-- Build state for issues: " + buildStatusForIssues.getDisplayName());
+        logger.alwaysLog("-- Build state for issues: " + buildStatusToSet.getDisplayName());
         logger.alwaysLog(String.format("Found %s issues in view.", issueCount));
 
         if (issueCount > 0) {
-            logger.alwaysLog("Setting build status to " + buildStatusForIssues.getResult().toString());
-            build.setResult(buildStatusForIssues.getResult());
+            final Result result = buildStatusToSet.getResult();
+            logger.alwaysLog("Setting build status to " + result.toString());
+            build.setResult(result);
         }
     }
 

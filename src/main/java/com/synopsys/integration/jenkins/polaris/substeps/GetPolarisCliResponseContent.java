@@ -22,26 +22,32 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import java.io.IOException;
+
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
-import com.synopsys.integration.polaris.common.cli.model.PolarisCliResponseModel;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 
 import jenkins.security.MasterToSlaveCallable;
 
-public class GetPolarisCliResponseModel extends MasterToSlaveCallable<PolarisCliResponseModel, PolarisIntegrationException> {
+public class GetPolarisCliResponseContent extends MasterToSlaveCallable<String, PolarisIntegrationException> {
     private static final long serialVersionUID = -5698280934593066898L;
     private final JenkinsIntLogger logger;
     private final String workspaceRemotePath;
 
-    public GetPolarisCliResponseModel(final JenkinsIntLogger logger, final String workspaceRemotePath) {
+    public GetPolarisCliResponseContent(final JenkinsIntLogger logger, final String workspaceRemotePath) {
         this.logger = logger;
         this.workspaceRemotePath = workspaceRemotePath;
     }
 
     @Override
-    public PolarisCliResponseModel call() throws PolarisIntegrationException {
+    public String call() throws PolarisIntegrationException {
         final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
-        return polarisCliResponseUtility.getPolarisCliResponseModelFromDefaultLocation(workspaceRemotePath);
+        try {
+            return polarisCliResponseUtility.getRawPolarisCliResponseFromDefaultLocation(workspaceRemotePath);
+        } catch (final IOException e) {
+            throw new PolarisIntegrationException("There was an error getting the Polaris CLI response.", e);
+        }
     }
+
 }
