@@ -47,6 +47,7 @@ import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
+import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
@@ -60,6 +61,7 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.Node;
 import hudson.model.Result;
+import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -154,12 +156,13 @@ public class PolarisBuildStep extends Builder {
         final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
         final GetPolarisCliResponseModel getPolarisCliResponseModel = new GetPolarisCliResponseModel(logger, workspace.getRemote());
         final GetTotalIssueCount getTotalIssueCount = new GetTotalIssueCount(logger, polarisService);
+        final VirtualChannel channel = launcher.getChannel();
 
         return StepWorkflow.first(createPolarisEnvironment)
-                   .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
+                   .then(RemoteSubStep.of(channel, getPathToPolarisCli))
                    .then(executePolarisCli)
-                   .andSometimes(RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseModel)).then(getTotalIssueCount).butOnlyIf(waitForIssues, Boolean.TRUE::equals)
-                   // TODO: This needs to be able to set the build status
+                   .andSometimes(RemoteSubStep.of(channel, getPolarisCliResponseModel)).then(getTotalIssueCount).then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   .butOnlyIf(waitForIssues, Boolean.TRUE::equals)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));
     }
@@ -181,6 +184,17 @@ public class PolarisBuildStep extends Builder {
         }
 
         return stepWorkflowResponse.wasSuccessful();
+    }
+
+    private void failOnIssuesPresent(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
+        logger.alwaysLog("Polaris Issue Check");
+        logger.alwaysLog("-- Build state for issues: " + buildStatusForIssues.getDisplayName());
+        logger.alwaysLog(String.format("Found %s issues in view.", issueCount));
+
+        if (issueCount > 0) {
+            logger.alwaysLog("Setting build status to " + buildStatusForIssues.getResult().toString());
+            build.setResult(buildStatusForIssues.getResult());
+        }
     }
 
     private void handleException(final JenkinsIntLogger logger, final AbstractBuild build, final Result result, final Exception e) {
