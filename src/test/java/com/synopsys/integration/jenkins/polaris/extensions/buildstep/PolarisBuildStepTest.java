@@ -19,10 +19,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.synopsys.integration.function.ThrowingFunction;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
+import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 
 import hudson.EnvVars;
@@ -92,9 +92,8 @@ public class PolarisBuildStepTest {
 
         final StepWorkflow.Builder stepWorkflowBuilder = Mockito.mock(StepWorkflow.Builder.class);
         PowerMockito.mockStatic(StepWorkflow.class);
-        Mockito.when(StepWorkflow.first(Mockito.any(CreatePolarisEnvironment.class))).thenReturn(stepWorkflowBuilder);
-        Mockito.when(stepWorkflowBuilder.then(Mockito.any(RemoteSubStep.class))).thenReturn(stepWorkflowBuilder);
-        Mockito.when(stepWorkflowBuilder.then(Mockito.any(ExecutePolarisCli.class))).thenReturn(stepWorkflowBuilder);
+        Mockito.when(StepWorkflow.first(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
+        Mockito.when(stepWorkflowBuilder.then(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
         final StepWorkflowResponse stepWorkflowResponse = Mockito.mock(StepWorkflowResponse.class);
         Mockito.when(stepWorkflowBuilder.run()).thenReturn(stepWorkflowResponse);
         Mockito.when(stepWorkflowResponse.handleResponse(Mockito.any(ThrowingFunction.class))).thenReturn(true);
