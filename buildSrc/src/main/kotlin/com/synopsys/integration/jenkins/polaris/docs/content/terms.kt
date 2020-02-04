@@ -25,7 +25,6 @@ package com.synopsys.integration.detect.docs.content
 class Terms {
     val termMap = mutableMapOf(
             "company_name" to "Synopsys",
-            "division_name" to "Synopsys SIG",
             "solution_name" to "Synopsys Polaris for Jenkins",
             "project_name" to "synopsys-polaris-plugin",
             "source_repo_organization" to "synopsys-sig",
