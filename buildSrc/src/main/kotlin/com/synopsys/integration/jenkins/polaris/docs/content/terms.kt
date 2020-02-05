@@ -29,7 +29,10 @@ class Terms {
             "project_name" to "synopsys-polaris-plugin",
             "source_repo_organization" to "synopsys-sig",
             "polaris_product_name" to "Synopsys Polaris",
-            "plugin_config_header" to "Synopsys Polaris"
+            "polaris_cli_name" to "Synopsys Polaris CLI",
+            "plugin_config_header" to "Synopsys Polaris",
+            "cli_config_header" to "Polaris CLI",
+            "add_polaris_cli_button" to "Add Polaris CLI"
     )
 
 }
