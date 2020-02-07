@@ -227,8 +227,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../40-updating/" title="Updating" class="md-nav__link">
-      Updating
+    <a href="../50-configuring/" title="Configuring" class="md-nav__link">
+      Configuring
     </a>
   </li>
 
@@ -239,8 +239,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../50-configuring/" title="Configuring" class="md-nav__link">
-      Configuring
+    <a href="../60-using/" title="Using in a build" class="md-nav__link">
+      Using in a build
     </a>
   </li>
 
@@ -274,8 +274,17 @@
                 
                 
                 <h1 id="introduction">Introduction</h1>
-<p>The Synopsys Polaris for Jenkins plugin enables you to include analysis of your projects by Polaris in your Jenkins builds. 
-Synopsys Polaris for Jenkins can be invoked from both freestyle and pipeline jobs.</p>
+<p>Synopsys Polaris helps security and development teams analyze security risks
+in their software products. The Synopsys Polaris for Jenkins plugin enables you to invoke Synopsys Polaris
+analysis from your Jenkins builds.
+Synopsys Polaris for Jenkins can be used in both freestyle and pipeline jobs.</p>
+<p>When the Synopsys Polaris for Jenkins plugin runs, it checks the configured
+Synopsys Polaris server and the Jenkins node to see if the correct version
+of the Synopsys Polaris Command Line Interpreter (CLI) is already installed
+on the node. If not, the plugin
+installs the Synopsys Polaris CLI. In either case, Synopsys Polaris for Jenkins
+then executes the Synopsys Polaris CLI, which
+analyzes your project, and uploads results to Synopsys Polaris.</p>
                 
                   
                 

@@ -216,18 +216,6 @@
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../40-updating/" title="Updating" class="md-nav__link">
-      Updating
-    </a>
-  </li>
-
-    
-      
-      
-      
-
   
 
 
@@ -238,10 +226,58 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Configuring
+      </label>
+    
     <a href="./" title="Configuring" class="md-nav__link md-nav__link--active">
       Configuring
     </a>
     
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-synopsys-polaris-cli" class="md-nav__link">
+    Configuring Synopsys Polaris CLI
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-synopsys-polaris-for-jenkins" class="md-nav__link">
+    Configuring Synopsys Polaris for Jenkins
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../60-using/" title="Using in a build" class="md-nav__link">
+      Using in a build
+    </a>
   </li>
 
     
@@ -262,6 +298,29 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-synopsys-polaris-cli" class="md-nav__link">
+    Configuring Synopsys Polaris CLI
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-synopsys-polaris-for-jenkins" class="md-nav__link">
+    Configuring Synopsys Polaris for Jenkins
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -274,25 +333,37 @@
                 
                 
                 <h1 id="configuring">Configuring</h1>
-<p>Use the following process to configure Synopsys Polaris for Jenkins plugin:</p>
+<p>Once the Synopsys Polaris for Jenkins plugin is installed, before you can use it in a job, you need to configure:</p>
 <ol>
-<li>After installing Synopsys Polaris for Jenkins in Jenkins, navigate to <em>Manage Jenkins &gt; Configure System</em>.</li>
-<li>Scroll down to the Synopsys Polaris section and complete the following:<ul>
-<li><em>Polaris URL</em>: The URL to your Polaris instance.</li>
-<li><em>Polaris credentials</em>: Synopsys Polaris for Jenkins only supports secret text credentials. The secret text is your Polaris user token.
-If you have already created a secret text credentials item in Jenkins for your Polaris user token, select it from the drop-down selector.
-Otherwise, click <em>Add &gt; Jenkins</em>, and in the <em>Add Credentials</em> screen, select <em>Kind &gt; Secret text</em>.
-Enter your Polaris user token in the <em>Secret</em> field, enter a name in the <em>ID</em> field,
-and optionally enter a description in the <em>Description</em> field. Click <em>Add</em>,
-which will return you to the <em>Synopsys Polaris</em> section of the <em>Configure System</em> screen.
-Select the name (ID) of the credentials item you just created using the drop-down selector.</li>
-<li><em>Advanced</em>: If you want to change the timeout that Synopsys Polaris for Jenkins will use when waiting
-for a response from the Polaris server, click <em>Advanced</em>
-and enter the timeout in seconds in the <em>Polaris connection timeout</em> field.</li>
-<li><em>Test connection to Polaris</em>: To test that Synopsys Polaris for Jenkins can connect to Polaris
-with the configuration data you have entered, click <em>Test connection to Polaris</em>.</li>
+<li>Synopsys Polaris CLI</li>
+<li>Synopsys Polaris for Jenkins</li>
+</ol>
+<h2 id="configuring-synopsys-polaris-cli">Configuring Synopsys Polaris CLI</h2>
+<p>Use the following process to configure Synopsys Polaris CLI:</p>
+<ol>
+<li>In Jenkins, navigate to <em>Manage Jenkins &gt; Global Tool Configuration</em>.</li>
+<li>Scroll down to the Polaris CLI section, click Add Polaris CLI, and complete the following:<ul>
+<li><em>Name</em>: A name for the Synopsys Polaris CLI installation.</li>
+<li><em>Required Installation directory</em>: To let Synopsys Polaris for Jenkins install the Synopsys Polaris CLI from your Synopsys Polaris server automatically, leave this box checked,
+and proceed to the next step. To point Synopsys Polaris for Jenkins to an existing Synopsys Polaris CLI installation, uncheck this box
+and enter the path to the Synopsys Polaris CLI directory in the <em>Required Installation directory</em> field.</li>
 </ul>
 </li>
+<li>Click Save.</li>
+</ol>
+<h2 id="configuring-synopsys-polaris-for-jenkins">Configuring Synopsys Polaris for Jenkins</h2>
+<p>Use the following process to configure Synopsys Polaris for Jenkins:</p>
+<ol>
+<li>After installing Synopsys Polaris for Jenkins in Jenkins, navigate to <em>Manage Jenkins &gt; Configure System</em>.</li>
+<li>Scroll down to the Synopsys Polaris section and complete the following:</li>
+<li><em>Polaris URL</em>: The URL to your Synopsys Polaris instance.</li>
+<li><em>Polaris credentials</em>: The Jenkins secret text credentials that you have created to store your Synopsys Polaris access token.</li>
+<li><em>Advanced</em>: If you want to change the timeout that Synopsys Polaris for Jenkins will use when waiting
+for a response from the Synopsys Polaris server, click <em>Advanced</em>
+and enter the timeout in seconds in the <em>Polaris connection timeout</em> field.</li>
+<li><em>Test connection to Polaris</em>: To test that Synopsys Polaris for Jenkins can connect to Synopsys Polaris
+with the configuration data you have entered, click <em>Test connection to Polaris</em>.</li>
+<li>Click Save.</li>
 </ol>
                 
                   
@@ -314,7 +385,7 @@ with the configuration data you have entered, click <em>Test connection to Polar
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../40-updating/" title="Updating" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../30-installing/" title="Installing" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -323,11 +394,25 @@ with the configuration data you have entered, click <em>Test connection to Polar
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Updating
+                Installing
               </span>
             </div>
           </a>
         
+        
+          <a href="../60-using/" title="Using in a build" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Using in a build
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
         
       </nav>
     </div>
