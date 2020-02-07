@@ -19,6 +19,7 @@ version = '0.0.1-SIGQA2-SNAPSHOT'
 description = 'Allows users to run Polaris static analysis in their builds'
 
 apply plugin: 'com.synopsys.integration.solution'
+apply from: 'docs.gradle'
 
 def jcenterRepo = project.repositories.findByName('BintrayJCenter')
 project.repositories.remove(jcenterRepo)
