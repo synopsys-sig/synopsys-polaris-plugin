@@ -1,0 +1,27 @@
+import com.synopsys.integration.jenkins.polaris.docs.GenerateDocsTask
+
+task generateDocs(type: GenerateDocsTask) {
+    dependsOn build
+}
+
+task docs() {
+    dependsOn generateDocs
+
+    doLast {
+        exec {
+            commandLine 'mkdocs', 'build'
+            workingDir "docs"
+        }
+    }
+}
+
+task servedocs() {
+    dependsOn docs
+
+    doLast {
+        exec {
+            commandLine 'mkdocs', 'serve'
+            workingDir "docs"
+        }
+    }
+}

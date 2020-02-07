@@ -1,0 +1,16 @@
+# Gradle task "docs" does the following:
+# 1. Converts freemarker templates in docs/templates to markdown in docs/generated using freemarker.
+# 2. Converts markdown to a website in docs/site using mkdocs.
+#
+# Neither the 'generated' folder nor the mkdocs 'site' folder should be added to source control.
+# After running the 'docs' task, the 'site' folder can be uploaded to gh-pages.
+# To build, install pip and python, then execute:
+#   pip install mkdocs
+#   pip install mkdocs-material
+# To view the docs, you must execute:
+#   At project root: ./gradlew docs
+#   At docs: mkdocs serve --no-livereload
+site_name: Synopsys Polaris for Jenkins
+theme:
+  name: 'material'
+docs_dir: 'generated'
