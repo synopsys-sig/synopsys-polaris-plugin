@@ -69,11 +69,9 @@ public class PolarisBuildStep extends Builder {
     private final String polarisArguments;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments /*final ChangeBuildStatusTo buildStatusForIssues, final boolean waitForIssues*/) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
-        /*this.buildStatusOnProblems = buildStatusForIssues;
-        this.waitForIssues = waitForIssues;*/
     }
 
     public String getPolarisArguments() {
