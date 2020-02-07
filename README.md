@@ -9,4 +9,4 @@
 
 # Documentation
 
-All documentation is located on our public [Black Duck Confluence]()
+The documentation is located [here](https://synopsys-sig.github.io/synopsys-polaris-plugin/latest/).
