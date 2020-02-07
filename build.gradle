@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.jenkins-ci.jpi' version '0.37.1'
+    id 'org.jenkins-ci.jpi' version '0.38.0'
 }
 
 group = 'org.jenkins-ci.plugins'
@@ -45,21 +45,17 @@ repositories {
     maven { url 'https://sig-repo.synopsys.com/bds-integrations-release' }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            if (project.version.toString().contains("SNAPSHOT")) {
-                artifact(snapshotBinary)
-            } else {
-                artifact(releaseBinary)
-            }
-        }
-    }
-}
-
 artifactory {
     publish {
-        defaults { publications('mavenJava') }
+        defaults {
+            mavenJava(MavenPublication) {
+                if (project.version.toString().contains("SNAPSHOT")) {
+                    artifact(snapshotBinary)
+                } else {
+                    artifact(releaseBinary)
+                }
+            }
+        }
     }
 }
 
@@ -71,7 +67,7 @@ jenkinsPlugin {
     url = 'https://wiki.jenkins.io/display/JENKINS/Synopsys+Polaris+Plugin'
     gitHubUrl = 'https://github.com/jenkinsci/synopsys-polaris-plugin'
 
-    compatibleSinceVersion = '1.0.0'
+    compatibleSinceVersion = '0.0.1'
     pluginFirstClassLoader = false
 }
 
