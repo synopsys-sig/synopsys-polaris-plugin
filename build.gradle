@@ -49,11 +49,13 @@ repositories {
 artifactory {
     publish {
         defaults {
-            mavenJava(MavenPublication) {
-                if (project.version.toString().contains("SNAPSHOT")) {
-                    artifact(snapshotBinary)
-                } else {
-                    artifact(releaseBinary)
+            publications {
+                mavenJava(MavenPublication) {
+                    if (project.version.toString().contains("SNAPSHOT")) {
+                        artifact(snapshotBinary)
+                    } else {
+                        artifact(releaseBinary)
+                    }
                 }
             }
         }
