@@ -46,19 +46,10 @@ repositories {
     maven { url 'https://sig-repo.synopsys.com/bds-integrations-release' }
 }
 
+
 artifactory {
     publish {
-        defaults {
-            publications {
-                MavenPublication {
-                    if (project.version.toString().contains("SNAPSHOT")) {
-                        artifact(snapshotBinary)
-                    } else {
-                        artifact(releaseBinary)
-                    }
-                }
-            }
-        }
+        defaults { publications('mavenJpi') }
     }
 }
 
