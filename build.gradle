@@ -50,7 +50,7 @@ artifactory {
     publish {
         defaults {
             publications {
-                mavenJava(MavenPublication) {
+                MavenPublication {
                     if (project.version.toString().contains("SNAPSHOT")) {
                         artifact(snapshotBinary)
                     } else {
