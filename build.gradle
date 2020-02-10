@@ -7,7 +7,7 @@ buildscript {
         maven { url 'https://plugins.gradle.org/m2/' }
         maven { url 'https://sig-repo.synopsys.com/bds-integrations-release' }
     }
-    dependencies { classpath 'com.synopsys.integration:common-gradle-plugin:1.1.0' }
+    dependencies { classpath 'com.synopsys.integration:common-gradle-plugin:1.1.1' }
 }
 
 plugins {
@@ -63,6 +63,11 @@ jenkinsPlugin {
 
     compatibleSinceVersion = '0.0.1'
     pluginFirstClassLoader = false
+
+    // As of 0.14.1 of polaris-common, methods we use to unpack the Polaris CLI utilize a version of commons-compress that is incompatible with version 2.197 of Jenkins and earlier.
+    // Once we no longer depend on commons compress, no longer use those methods, or we update our minimum supported version past 2.197, we should unmask those classes.
+    // -rotte FEB 2020
+    maskClasses = 'org.apache.commons.compress'
 }
 
 dependencies {
