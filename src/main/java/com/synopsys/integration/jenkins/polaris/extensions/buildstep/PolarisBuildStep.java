@@ -35,14 +35,11 @@ import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 
 import hudson.AbortException;
-import hudson.EnvVars;
 import hudson.Extension;
-import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Node;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -85,29 +82,11 @@ public class PolarisBuildStep extends Builder {
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
 
-        // TODO
-        // 1. validation
-        // 2. create a single factory focused on creating workflow steps; should eliminate the need for PolarisWorkflowSteps class
-        // 3. delegate the work (passing factory)
-
         validateBuild(build);
-        final FilePath workspace = build.getWorkspace();
-        final Node node = build.getBuiltOn();
-        final EnvVars envVars = build.getEnvironment(listener);
 
-        // Factories for objects that must be constructed later
-        // create a factory whose goal is to produce the runtime steps TODO
-        final PolarisCliFactory polarisCliFactory = new PolarisCliFactory();
-        final JenkinsIntLoggerFactory jenkinsIntLoggerFactory = new JenkinsIntLoggerFactory();
-        final IntEnvironmentVariablesFactory intEnvironmentVariablesFactory = new IntEnvironmentVariablesFactory();
-
-        // Objects we can construct now
-        // what if we eliminate the wrappers around StepWorkflow: PolarisWorkflow and PolarisBuildStepPerformer
-        // Maybe combine them so we can still delegate the work out of this method? TODO
-        final PolarisWorkflow polarisWorkflow = new PolarisWorkflow();
-        final PolarisBuildStepPerformer polarisBuildStepPerformer = new PolarisBuildStepPerformer(polarisCliFactory, polarisWorkflow, jenkinsIntLoggerFactory, intEnvironmentVariablesFactory);
-
-        final boolean result = polarisBuildStepPerformer.perform(build, launcher, envVars, node, listener, workspace, polarisCliName, polarisArguments);
+        final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build, launcher, listener);
+        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(polarisWorkflowStepFactory);
+        final boolean result = polarisBuildStepWorker.perform();
         return result;
     }
 

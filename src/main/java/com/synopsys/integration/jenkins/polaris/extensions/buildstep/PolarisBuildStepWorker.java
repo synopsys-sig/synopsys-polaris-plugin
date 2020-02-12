@@ -22,49 +22,42 @@
  */
 package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
+import java.io.IOException;
+
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
-import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
-import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
-import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
-import com.synopsys.integration.util.IntEnvironmentVariables;
 
-import hudson.FilePath;
-import hudson.Launcher;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Result;
 
-public class PolarisWorkflow {
-// TODO (early) have a factory do this (lazily);
-    public PolarisWorkflowSteps createPolarisWorkflowSteps(final Launcher launcher, final BuildListener listener, final JenkinsIntLogger logger, final FilePath workspace, final PolarisCli polarisCli,
-            final IntEnvironmentVariables intEnvironmentVariables, final String polarisArguments) {
+public class PolarisBuildStepWorker {
+    private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
 
-        final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
-        final RemoteSubStep<String> findPolarisCli = createRemoteSubStepForGetPathToPolarisCli(launcher, polarisCli);
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
-
-        return new PolarisWorkflowSteps(createPolarisEnvironment, findPolarisCli, executePolarisCli);
-    }
-// TODO (early) call the factory directly from here??
-    public StepWorkflow.Builder<Integer> createWorkflowFromSteps(final PolarisWorkflowSteps polarisWorkflowSteps) {
-        return StepWorkflow
-                   .first(polarisWorkflowSteps.getCreatePolarisEnvironment())
-                   .then(polarisWorkflowSteps.getFindPolarisCli())
-                   .then(polarisWorkflowSteps.getExecutePolarisCli());
+    public PolarisBuildStepWorker(final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
+        this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
     }
 
-    public boolean executeWorkflow(final AbstractBuild<?, ?> build, final JenkinsIntLogger logger, final StepWorkflow.Builder<Integer> workflow) {
-        return workflow.run().handleResponse(response -> afterPerform(logger, response, build));
-    }
-
-    private RemoteSubStep<String> createRemoteSubStepForGetPathToPolarisCli(final Launcher launcher, final PolarisCli polarisCli) {
-        final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-        return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
+    public boolean perform() throws InterruptedException, IOException {
+        try {
+            return StepWorkflow
+                .first(polarisWorkflowStepFactory.createCreatePolarisEnvironmentStep())
+                .then(polarisWorkflowStepFactory.createFindPolarisCliStep())
+                .then(polarisWorkflowStepFactory.createExecutePolarisCliStep())
+                .run()
+                .handleResponse(response -> afterPerform(polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger(), response, polarisWorkflowStepFactory.getBuild()));
+        } catch (final Exception e) {
+            // TODO: THis catch is temp; why does compiler think that code throws Exception?
+            if (e instanceof  InterruptedException) {
+                throw (InterruptedException)e;
+            }
+            if (e instanceof IOException) {
+                throw (IOException)e;
+            }
+            e.printStackTrace();
+            throw new IOException("WTF????");
+        }
     }
 
     private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
