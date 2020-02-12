@@ -31,17 +31,8 @@ import javax.annotation.Nonnull;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
-import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
-import com.synopsys.integration.stepworkflow.StepWorkflow;
-import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
-import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
-import com.synopsys.integration.util.IntEnvironmentVariables;
 
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -52,7 +43,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.Node;
-import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -94,62 +84,31 @@ public class PolarisBuildStep extends Builder {
 
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
-        final JenkinsIntLogger logger = new JenkinsIntLogger(listener);
 
+        // TODO
+        // 1. validation
+        // 2. create a single factory focused on creating workflow steps; should eliminate the need for PolarisWorkflowSteps class
+        // 3. delegate the work (passing factory)
+
+        validateBuild(build);
         final FilePath workspace = build.getWorkspace();
-        if (workspace == null) {
-            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-        }
-
-        PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
-                                    .orElseThrow(() -> new AbortException(
-                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
         final Node node = build.getBuiltOn();
-        if (node == null) {
-            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
-        }
-
-        final IntEnvironmentVariables intEnvironmentVariables = new IntEnvironmentVariables(false);
         final EnvVars envVars = build.getEnvironment(listener);
-        polarisCli = polarisCli.forEnvironment(envVars);
-        polarisCli = polarisCli.forNode(node, listener);
-        intEnvironmentVariables.putAll(envVars);
-        logger.setLogLevel(intEnvironmentVariables);
 
-        final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
-        final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
+        // Factories for objects that must be constructed later
+        // create a factory whose goal is to produce the runtime steps TODO
+        final PolarisCliFactory polarisCliFactory = new PolarisCliFactory();
+        final JenkinsIntLoggerFactory jenkinsIntLoggerFactory = new JenkinsIntLoggerFactory();
+        final IntEnvironmentVariablesFactory intEnvironmentVariablesFactory = new IntEnvironmentVariablesFactory();
 
-        return StepWorkflow.first(createPolarisEnvironment)
-                   .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
-                   .then(executePolarisCli)
-                   .run()
-                   .handleResponse(response -> afterPerform(logger, response, build));
-    }
+        // Objects we can construct now
+        // what if we eliminate the wrappers around StepWorkflow: PolarisWorkflow and PolarisBuildStepPerformer
+        // Maybe combine them so we can still delegate the work out of this method? TODO
+        final PolarisWorkflow polarisWorkflow = new PolarisWorkflow();
+        final PolarisBuildStepPerformer polarisBuildStepPerformer = new PolarisBuildStepPerformer(polarisCliFactory, polarisWorkflow, jenkinsIntLoggerFactory, intEnvironmentVariablesFactory);
 
-    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
-        final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
-        try {
-            if (!wasSuccessful) {
-                throw stepWorkflowResponse.getException();
-            }
-        } catch (final InterruptedException e) {
-            logger.error("[ERROR] Synopsys Polaris thread was interrupted.", e);
-            build.setResult(Result.ABORTED);
-            Thread.currentThread().interrupt();
-        } catch (final IntegrationException e) {
-            this.handleException(logger, build, Result.FAILURE, e);
-        } catch (final Exception e) {
-            this.handleException(logger, build, Result.UNSTABLE, e);
-        }
-
-        return stepWorkflowResponse.wasSuccessful();
-    }
-
-    private void handleException(final JenkinsIntLogger logger, final AbstractBuild build, final Result result, final Exception e) {
-        logger.error("[ERROR] " + e.getMessage());
-        logger.debug(e.getMessage(), e);
-        build.setResult(result);
+        final boolean result = polarisBuildStepPerformer.perform(build, launcher, envVars, node, listener, workspace, polarisCliName, polarisArguments);
+        return result;
     }
 
     @Extension
@@ -184,7 +143,14 @@ public class PolarisBuildStep extends Builder {
         public String getDisplayName() {
             return DISPLAY_NAME;
         }
-
     }
 
+    private void validateBuild(final AbstractBuild<?, ?> build) throws AbortException {
+        if (build.getWorkspace() == null) {
+            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
+        }
+        if (build.getBuiltOn() == null) {
+            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
+        }
+    }
 }
