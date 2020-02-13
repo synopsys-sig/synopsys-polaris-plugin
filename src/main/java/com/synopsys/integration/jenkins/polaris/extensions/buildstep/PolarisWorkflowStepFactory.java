@@ -45,7 +45,7 @@ public class PolarisWorkflowStepFactory {
     private final Launcher launcher;
     private final BuildListener listener;
 
-    // Lazily initialized; inside the class: use getOrCreate...() to get value
+    // These fields are lazily initialized; inside this class: use getOrCreate...() to get these values
     private EnvVars envVars = null;
     private IntEnvironmentVariables intEnvironmentVariables = null;
     private JenkinsIntLogger logger = null;
@@ -83,16 +83,16 @@ public class PolarisWorkflowStepFactory {
         return executePolarisCli;
     }
 
+    public AbstractBuild<?, ?> getBuild() {
+        return build;
+    }
+
     public JenkinsIntLogger getOrCreateJenkinsIntLogger() throws IOException, InterruptedException {
         if (logger == null) {
             logger = new JenkinsIntLogger(listener);
             logger.setLogLevel(getOrCreateIntEnvironmentVariables());
         }
         return logger;
-    }
-
-    public AbstractBuild<?, ?> getBuild() {
-        return build;
     }
 
     private EnvVars getOrCreateEnvVars() throws IOException, InterruptedException {

@@ -40,24 +40,12 @@ public class PolarisBuildStepWorker {
     }
 
     public boolean perform() throws InterruptedException, IOException {
-        try {
+        final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger();
             return StepWorkflow
                 .first(polarisWorkflowStepFactory.createCreatePolarisEnvironmentStep())
                 .then(polarisWorkflowStepFactory.createFindPolarisCliStep())
                 .then(polarisWorkflowStepFactory.createExecutePolarisCliStep())
-                .run()
-                .handleResponse(response -> afterPerform(polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger(), response, polarisWorkflowStepFactory.getBuild()));
-        } catch (final Exception e) {
-            // TODO: THis catch is temp; why does compiler think that code throws Exception?
-            if (e instanceof  InterruptedException) {
-                throw (InterruptedException)e;
-            }
-            if (e instanceof IOException) {
-                throw (IOException)e;
-            }
-            e.printStackTrace();
-            throw new IOException("WTF????");
-        }
+                .run().handleResponse(response -> afterPerform(logger, response, polarisWorkflowStepFactory.getBuild()));
     }
 
     private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Integer> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
