@@ -41,7 +41,7 @@ public class PolarisBuildStepWorker {
 
     public boolean perform() throws InterruptedException, IOException {
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger();
-            return StepWorkflow
+        return StepWorkflow
                 .first(polarisWorkflowStepFactory.createCreatePolarisEnvironmentStep())
                 .then(polarisWorkflowStepFactory.createFindPolarisCliStep())
                 .then(polarisWorkflowStepFactory.createExecutePolarisCliStep())
