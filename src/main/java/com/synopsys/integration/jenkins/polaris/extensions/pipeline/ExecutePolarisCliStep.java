@@ -62,28 +62,28 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
     private static final long serialVersionUID = -2698425344634481146L;
 
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
-    private final String polarisArguments;
+    private final String arguments;
 
     @Nullable
     @HelpMarkdown("The Polaris CLI installation to execute")
-    private String polarisCliName;
+    private String polarisCli;
 
     @DataBoundConstructor
-    public ExecutePolarisCliStep(final String polarisArguments) {
-        this.polarisArguments = polarisArguments;
+    public ExecutePolarisCliStep(final String arguments) {
+        this.arguments = arguments;
     }
 
-    public String getPolarisCliName() {
-        return polarisCliName;
+    public String getPolarisCli() {
+        return polarisCli;
     }
 
     @DataBoundSetter
-    public void setPolarisCliName(final String polarisCliName) {
-        this.polarisCliName = polarisCliName;
+    public void setPolarisCli(final String polarisCli) {
+        this.polarisCli = polarisCli;
     }
 
-    public String getPolarisArguments() {
-        return polarisArguments;
+    public String getArguments() {
+        return arguments;
     }
 
     @Override
@@ -151,7 +151,7 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
         protected Integer run() throws Exception {
             validate();
 
-            final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, node, workspace, envVars, launcher, listener);
+            final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCli, arguments, node, workspace, envVars, launcher, listener);
             final PolarisPipelineWorkflow polarisPipelineWorkflow = new PolarisPipelineWorkflow(polarisWorkflowStepFactory);
             return polarisPipelineWorkflow.perform();
         }
