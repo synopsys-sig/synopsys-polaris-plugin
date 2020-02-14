@@ -19,5 +19,6 @@ work/
 # jenv
 .java-version
 
-docs/site/
-docs/generated/
+# docs
+docs/generated
+docs/site

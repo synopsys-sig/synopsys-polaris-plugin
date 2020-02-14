@@ -132,7 +132,7 @@ public class PolarisBuildStepTest {
 
         // Test
         final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, waitForIssues);
-        boolean result = polarisBuildStep.perform(build, launcher, buildListener);
+        final boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify
         assertTrue(result);
