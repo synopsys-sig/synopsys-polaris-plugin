@@ -34,27 +34,26 @@ import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 
-// TODO rename this to PolarisWorkflow
-public class PolarisBuildStepWorker {
+public class PolarisWorkflow {
     private final WaitForIssues waitForIssues;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
     private final AbstractBuild<?, ?> build;
 
-    public PolarisBuildStepWorker(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
+    public PolarisWorkflow(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
         this.waitForIssues = waitForIssues;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
         this.build = build;
     }
 
     public boolean perform() throws InterruptedException, IOException {
-        final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger();
+        final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
         return StepWorkflow
-                   .first(polarisWorkflowStepFactory.createCreatePolarisEnvironmentStep())
-                   .then(polarisWorkflowStepFactory.createFindPolarisCliStep())
-                   .then(polarisWorkflowStepFactory.createExecutePolarisCliStep())
-                   .andSometimes(polarisWorkflowStepFactory.createGetPolarisCliResponseContentStep())
-                   .then(polarisWorkflowStepFactory.createGetTotalIssueCountStep())
-                   .then(polarisWorkflowStepFactory.createSubStepOfConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   .first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
+                   .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
+                   .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
+                   .andSometimes(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
+                   .then(polarisWorkflowStepFactory.createStepGetTotalIssueCount())
+                   .then(polarisWorkflowStepFactory.createStepWithConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));

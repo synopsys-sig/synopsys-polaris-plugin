@@ -72,13 +72,13 @@ public class PolarisWorkflowStepFactory {
         this.listener = listener;
     }
 
-    public CreatePolarisEnvironment createCreatePolarisEnvironmentStep() throws IOException, InterruptedException {
-        final IntEnvironmentVariables intEnvironmentVariables = getOrCreateIntEnvironmentVariables();
-        final JenkinsIntLogger logger = getOrCreateJenkinsIntLogger();
+    public CreatePolarisEnvironment createStepCreatePolarisEnvironment() throws IOException, InterruptedException {
+        final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
+        final JenkinsIntLogger logger = getOrCreateLogger();
         return new CreatePolarisEnvironment(logger, intEnvironmentVariables);
     }
 
-    public RemoteSubStep<String> createFindPolarisCliStep() throws IOException, InterruptedException {
+    public RemoteSubStep<String> createStepFindPolarisCli() throws IOException, InterruptedException {
         PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
                                         "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
@@ -89,20 +89,20 @@ public class PolarisWorkflowStepFactory {
         return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
     }
 
-    public ExecutePolarisCli createExecutePolarisCliStep() throws IOException, InterruptedException {
-        final JenkinsIntLogger logger = getOrCreateJenkinsIntLogger();
-        final IntEnvironmentVariables intEnvironmentVariables = getOrCreateIntEnvironmentVariables();
+    public ExecutePolarisCli createStepExecutePolarisCli() throws IOException, InterruptedException {
+        final JenkinsIntLogger logger = getOrCreateLogger();
+        final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
         final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
         return executePolarisCli;
     }
 
-    public RemoteSubStep<String>  createGetPolarisCliResponseContentStep() {
+    public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
         final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(logger, workspace.getRemote());
         final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
         return getPolarisCliResponseContentRemoteStep;
     }
 
-    public GetTotalIssueCount createGetTotalIssueCountStep() throws AbortException {
+    public GetTotalIssueCount createStepGetTotalIssueCount() throws AbortException {
         final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
         if (polarisGlobalConfig == null) {
             throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
@@ -113,23 +113,19 @@ public class PolarisWorkflowStepFactory {
         return new GetTotalIssueCount(logger, polarisService);
     }
 
-    // TODO use this:
-//    public SubStep createStepOfGivenConsumer(final ThrowingConsumer<Integer, ? extends Exception> consumer) {
-//        return SubStep.ofConsumer(consumer);
-//    }
-    public SubStep<Integer, Object> createSubStepOfConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {
+    public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {
         return SubStep.ofConsumer(consumer);
     }
 
-    public JenkinsIntLogger getOrCreateJenkinsIntLogger() throws IOException, InterruptedException {
+    public JenkinsIntLogger getOrCreateLogger() {
         if (logger == null) {
             logger = new JenkinsIntLogger(listener);
-            logger.setLogLevel(getOrCreateIntEnvironmentVariables());
+            logger.setLogLevel(getOrCreateEnvironmentVariables());
         }
         return logger;
     }
 
-    private IntEnvironmentVariables getOrCreateIntEnvironmentVariables() {
+    private IntEnvironmentVariables getOrCreateEnvironmentVariables() {
         if (intEnvironmentVariables == null) {
             intEnvironmentVariables = new IntEnvironmentVariables(false);
             intEnvironmentVariables.putAll(envVars);

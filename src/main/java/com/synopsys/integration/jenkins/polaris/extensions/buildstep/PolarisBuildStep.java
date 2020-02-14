@@ -92,8 +92,8 @@ public class PolarisBuildStep extends Builder {
         validateBuild(build);
 
         final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build.getBuiltOn(), build.getWorkspace(), build.getEnvironment(listener), launcher, listener);
-        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(waitForIssues, polarisWorkflowStepFactory, build);
-        final boolean result = polarisBuildStepWorker.perform();
+        final PolarisWorkflow polarisWorkflow = new PolarisWorkflow(waitForIssues, polarisWorkflowStepFactory, build);
+        final boolean result = polarisWorkflow.perform();
         return result;
     }
 
