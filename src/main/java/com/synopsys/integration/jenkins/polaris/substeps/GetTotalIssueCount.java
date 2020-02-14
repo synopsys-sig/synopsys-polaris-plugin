@@ -22,16 +22,21 @@
  */
 package com.synopsys.integration.jenkins.polaris.substeps;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.polaris.common.api.PolarisComponent;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
+import com.synopsys.integration.polaris.common.cli.model.BlackDuckScaToolInfo;
+import com.synopsys.integration.polaris.common.cli.model.CoverityToolInfo;
 import com.synopsys.integration.polaris.common.cli.model.IssueSummary;
 import com.synopsys.integration.polaris.common.cli.model.PolarisCliResponseModel;
 import com.synopsys.integration.polaris.common.cli.model.ScanInfo;
@@ -57,7 +62,8 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         }
 
         final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
-        final PolarisCliResponseModel polarisCliResponseModel = polarisCliResponseUtility.getPolarisCliResponseModelFromString(previousResponse.getData());
+        final String rawJson = previousResponse.getData();
+        final PolarisCliResponseModel polarisCliResponseModel = polarisCliResponseUtility.getPolarisCliResponseModelFromString(rawJson);
         final IssueSummary issueSummary = polarisCliResponseModel.getIssueSummary();
         final ScanInfo scanInfo = polarisCliResponseModel.getScanInfo();
 
@@ -67,12 +73,30 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         }
 
         try {
-            if (scanInfo == null || StringUtils.isBlank(scanInfo.getIssueApiUrl())) {
-                throw new PolarisIntegrationException("Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI.");
-            }
+            final String issueApiUrl = Optional.ofNullable(scanInfo)
+                                           .map(ScanInfo::getIssueApiUrl)
+                                           .filter(StringUtils::isBlank)
+                                           .orElseThrow(() -> new PolarisIntegrationException(
+                                               "Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI."
+                                           ));
 
             logger.debug("Found issue api url, polling for issues");
-            final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(scanInfo.getIssueApiUrl()).build());
+            final List<String> jobStatusUrls = new ArrayList<>();
+
+            Optional.ofNullable(polarisCliResponseModel.getBlackDuckScaToolInfo())
+                .map(BlackDuckScaToolInfo::getJobStatusUrl)
+                .ifPresent(jobStatusUrls::add);
+
+            Optional.ofNullable(polarisCliResponseModel.getCoverityToolInfo())
+                .map(CoverityToolInfo::getJobStatusUrl)
+                .ifPresent(jobStatusUrls::add);
+
+            for (final String jobStatusUrl : jobStatusUrls) {
+                final PolarisComponent response = polarisService.get(PolarisComponent.class, PolarisRequestFactory.createDefaultBuilder().uri(jobStatusUrl).build());
+                // TODO: Check for job status
+            }
+
+            final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
             final List<CountV0> countV0s = countV0Resources.getData();
             return SubStepResponse.SUCCESS(countV0s.stream()
                                                .map(CountV0::getAttributes)

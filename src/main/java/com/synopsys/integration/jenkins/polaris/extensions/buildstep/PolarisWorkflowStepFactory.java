@@ -97,7 +97,7 @@ public class PolarisWorkflowStepFactory {
     }
 
     public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
-        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(logger, workspace.getRemote());
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
         final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
         return getPolarisCliResponseContentRemoteStep;
     }

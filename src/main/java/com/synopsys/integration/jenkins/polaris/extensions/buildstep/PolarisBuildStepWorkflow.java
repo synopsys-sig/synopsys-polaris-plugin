@@ -53,7 +53,7 @@ public class PolarisBuildStepWorkflow {
                    .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
                    .andSometimes(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
                    .then(polarisWorkflowStepFactory.createStepGetTotalIssueCount())
-                   .then(polarisWorkflowStepFactory.createStepWithConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   .then(polarisWorkflowStepFactory.createStepWithConsumer(issueCount -> setBuildStatusOnIssues(logger, issueCount, build)))
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));
@@ -78,7 +78,7 @@ public class PolarisBuildStepWorkflow {
         return stepWorkflowResponse.wasSuccessful();
     }
 
-    private void failOnIssuesPresent(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
+    private void setBuildStatusOnIssues(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
         final ChangeBuildStatusTo buildStatusToSet;
         if (waitForIssues == null) {
             buildStatusToSet = ChangeBuildStatusTo.SUCCESS;

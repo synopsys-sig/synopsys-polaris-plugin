@@ -23,8 +23,9 @@
 package com.synopsys.integration.jenkins.polaris.substeps;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
 
-import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 
@@ -32,19 +33,16 @@ import jenkins.security.MasterToSlaveCallable;
 
 public class GetPolarisCliResponseContent extends MasterToSlaveCallable<String, PolarisIntegrationException> {
     private static final long serialVersionUID = -5698280934593066898L;
-    private final JenkinsIntLogger logger;
     private final String workspaceRemotePath;
 
-    public GetPolarisCliResponseContent(final JenkinsIntLogger logger, final String workspaceRemotePath) {
-        this.logger = logger;
+    public GetPolarisCliResponseContent(final String workspaceRemotePath) {
         this.workspaceRemotePath = workspaceRemotePath;
     }
 
     @Override
     public String call() throws PolarisIntegrationException {
-        final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
         try {
-            return polarisCliResponseUtility.getRawPolarisCliResponseFromDefaultLocation(workspaceRemotePath);
+            return Arrays.toString(Files.readAllBytes(PolarisCliResponseUtility.getDefaultPathToJson(workspaceRemotePath)));
         } catch (final IOException e) {
             throw new PolarisIntegrationException("There was an error getting the Polaris CLI response.", e);
         }
