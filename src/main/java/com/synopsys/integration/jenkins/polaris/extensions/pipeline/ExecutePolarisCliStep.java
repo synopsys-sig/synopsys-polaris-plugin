@@ -43,14 +43,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.extensions.buildstep.PolarisWorkflowStepFactory;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
-import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
-import com.synopsys.integration.stepworkflow.StepWorkflow;
-import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
-import com.synopsys.integration.util.IntEnvironmentVariables;
 
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -68,28 +62,28 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
     private static final long serialVersionUID = -2698425344634481146L;
 
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
-    private final String arguments;
+    private final String polarisArguments;
 
     @Nullable
     @HelpMarkdown("The Polaris CLI installation to execute")
-    private String polarisCli;
+    private String polarisCliName;
 
     @DataBoundConstructor
-    public ExecutePolarisCliStep(final String arguments) {
-        this.arguments = arguments;
+    public ExecutePolarisCliStep(final String polarisArguments) {
+        this.polarisArguments = polarisArguments;
     }
 
-    public String getPolarisCli() {
-        return polarisCli;
+    public String getPolarisCliName() {
+        return polarisCliName;
     }
 
     @DataBoundSetter
-    public void setPolarisCli(final String polarisCli) {
-        this.polarisCli = polarisCli;
+    public void setPolarisCliName(final String polarisCliName) {
+        this.polarisCliName = polarisCliName;
     }
 
-    public String getArguments() {
-        return arguments;
+    public String getPolarisArguments() {
+        return polarisArguments;
     }
 
     @Override
@@ -138,11 +132,11 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
 
     public class Execution extends SynchronousNonBlockingStepExecution {
         private static final long serialVersionUID = -3799159740768688972L;
-        private transient TaskListener listener;
-        private transient EnvVars envVars;
-        private transient FilePath workspace;
-        private transient Launcher launcher;
-        private transient Node node;
+        private final transient TaskListener listener;
+        private final transient EnvVars envVars;
+        private final transient FilePath workspace;
+        private final transient Launcher launcher;
+        private final transient Node node;
 
         protected Execution(@Nonnull final StepContext context) throws InterruptedException, IOException {
             super(context);
@@ -155,34 +149,20 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
 
         @Override
         protected Integer run() throws Exception {
-            final JenkinsIntLogger logger = new JenkinsIntLogger(listener);
+            validate();
 
-            if (workspace == null) {
-                throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-            }
+            final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, node, workspace, envVars, launcher, listener);
+            final PolarisPipelineWorkflow polarisPipelineWorkflow = new PolarisPipelineWorkflow(polarisWorkflowStepFactory);
+            return polarisPipelineWorkflow.perform();
+        }
 
-            PolarisCli polarisCli = PolarisCli.findInstanceWithName(ExecutePolarisCliStep.this.polarisCli)
-                                        .orElseThrow(() -> new AbortException("Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
-
+        private void validate() throws AbortException {
             if (node == null) {
                 throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
             }
-
-            final IntEnvironmentVariables intEnvironmentVariables = new IntEnvironmentVariables(false);
-            polarisCli = polarisCli.forEnvironment(envVars);
-            polarisCli = polarisCli.forNode(node, listener);
-            intEnvironmentVariables.putAll(envVars);
-            logger.setLogLevel(intEnvironmentVariables);
-
-            final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
-            final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-            final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, arguments);
-
-            return StepWorkflow.first(createPolarisEnvironment)
-                       .then(RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli))
-                       .then(executePolarisCli)
-                       .run()
-                       .getDataOrThrowException();
+            if (workspace == null) {
+                throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
+            }
         }
     }
 }

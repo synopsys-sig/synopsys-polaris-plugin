@@ -34,12 +34,12 @@ import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 
-public class PolarisWorkflow {
+public class PolarisBuildStepWorkflow {
     private final WaitForIssues waitForIssues;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
     private final AbstractBuild<?, ?> build;
 
-    public PolarisWorkflow(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
+    public PolarisBuildStepWorkflow(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
         this.waitForIssues = waitForIssues;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
         this.build = build;

@@ -44,8 +44,8 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.Node;
+import hudson.model.TaskListener;
 import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
@@ -55,14 +55,14 @@ public class PolarisWorkflowStepFactory {
     private final FilePath workspace;
     private final EnvVars envVars;
     private final Launcher launcher;
-    private final BuildListener listener;
+    private final TaskListener listener;
 
     // These fields are lazily initialized; inside this class: use getOrCreate...() to get these values
     private IntEnvironmentVariables intEnvironmentVariables = null;
     private JenkinsIntLogger logger = null;
 
 
-    public PolarisWorkflowStepFactory(final String polarisCliName, final String polarisArguments, final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final BuildListener listener) {
+    public PolarisWorkflowStepFactory(final String polarisCliName, final String polarisArguments, final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
         this.node = node;
