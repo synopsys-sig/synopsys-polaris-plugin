@@ -147,14 +147,14 @@ public class PolarisBuildStep extends Builder {
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, intEnvironmentVariables);
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
         final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
-        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(logger, workspace.getRemote());
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
         final GetTotalIssueCount getTotalIssueCount = new GetTotalIssueCount(logger, polarisService);
         final VirtualChannel channel = launcher.getChannel();
 
         return StepWorkflow.first(createPolarisEnvironment)
                    .then(RemoteSubStep.of(channel, getPathToPolarisCli))
                    .then(executePolarisCli)
-                   .andSometimes(RemoteSubStep.of(channel, getPolarisCliResponseContent)).then(getTotalIssueCount).then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   .andSometimes(RemoteSubStep.of(channel, getPolarisCliResponseContent)).then(getTotalIssueCount).then(SubStep.ofConsumer(issueCount -> setBuildStatusOnIssues(logger, issueCount, build)))
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response, build));
@@ -179,7 +179,7 @@ public class PolarisBuildStep extends Builder {
         return stepWorkflowResponse.wasSuccessful();
     }
 
-    private void failOnIssuesPresent(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
+    private void setBuildStatusOnIssues(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
         final ChangeBuildStatusTo buildStatusToSet;
         if (waitForIssues == null) {
             buildStatusToSet = ChangeBuildStatusTo.SUCCESS;
