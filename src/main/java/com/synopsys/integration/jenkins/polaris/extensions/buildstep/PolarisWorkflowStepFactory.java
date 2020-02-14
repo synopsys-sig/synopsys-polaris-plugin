@@ -114,7 +114,10 @@ public class PolarisWorkflowStepFactory {
     }
 
     // TODO use this:
-    public SubStep createStepOfGivenConsumer(final ThrowingConsumer<Integer, ? extends Exception> consumer) {
+//    public SubStep createStepOfGivenConsumer(final ThrowingConsumer<Integer, ? extends Exception> consumer) {
+//        return SubStep.ofConsumer(consumer);
+//    }
+    public SubStep<Integer, Object> createSubStepOfConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {
         return SubStep.ofConsumer(consumer);
     }
 
