@@ -91,8 +91,8 @@ public class PolarisBuildStep extends Builder {
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
         validateBuild(build);
 
-        final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build, launcher, listener);
-        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(waitForIssues, polarisWorkflowStepFactory);
+        final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build.getBuiltOn(), build.getWorkspace(), build.getEnvironment(listener), launcher, listener);
+        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(waitForIssues, polarisWorkflowStepFactory, build);
         final boolean result = polarisBuildStepWorker.perform();
         return result;
     }

@@ -39,10 +39,12 @@ import hudson.model.Result;
 public class PolarisBuildStepWorker {
     private final WaitForIssues waitForIssues;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
+    private final AbstractBuild<?, ?> build;
 
-    public PolarisBuildStepWorker(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
+    public PolarisBuildStepWorker(final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
         this.waitForIssues = waitForIssues;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
+        this.build = build;
     }
 
     public boolean perform() throws InterruptedException, IOException {
@@ -51,15 +53,22 @@ public class PolarisBuildStepWorker {
                    .first(polarisWorkflowStepFactory.createCreatePolarisEnvironmentStep())
                    .then(polarisWorkflowStepFactory.createFindPolarisCliStep())
                    .then(polarisWorkflowStepFactory.createExecutePolarisCliStep())
-
-                   .andSometimes(polarisWorkflowStepFactory.createGetPolarisCliResponseContentStep()).then(polarisWorkflowStepFactory.createGetTotalIssueCount())
-                   .then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, polarisWorkflowStepFactory.getBuild())))
+                   .andSometimes(polarisWorkflowStepFactory.createGetPolarisCliResponseContentStep()).then(polarisWorkflowStepFactory.createGetTotalIssueCountStep())
+                   // TODO: factory should do more of this? But would that mean factor needs build again?? No, just pass it in here:
+                   .then(SubStep.ofConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   //.then(polarisWorkflowStepFactory.createStepOfGivenConsumer(issueCount -> failOnIssuesPresent(logger, issueCount, build)))
+                   //
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
-                   .handleResponse(response -> afterPerform(logger, response, polarisWorkflowStepFactory.getBuild()));
+                   .handleResponse(response -> afterPerform(logger, response));
     }
+
+//    private ThrowingConsumer<Integer, Exception> tbd(final int issueCount) throws InterruptedException, IOException {
+//        final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateJenkinsIntLogger();
+//        failOnIssuesPresent(logger, issueCount, polarisWorkflowStepFactory.getBuild());
+//    }
     
-    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Object> stepWorkflowResponse, final AbstractBuild<?, ?> build) {
+    private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Object> stepWorkflowResponse) {
         final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
         try {
             if (!wasSuccessful) {
