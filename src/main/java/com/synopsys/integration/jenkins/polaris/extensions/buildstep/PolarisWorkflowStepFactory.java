@@ -25,10 +25,16 @@ package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 import java.io.IOException;
 
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
 import com.synopsys.integration.jenkins.polaris.substeps.GetPathToPolarisCli;
+import com.synopsys.integration.jenkins.polaris.substeps.GetPolarisCliResponseContent;
+import com.synopsys.integration.jenkins.polaris.substeps.GetTotalIssueCount;
+import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
+import com.synopsys.integration.polaris.common.service.PolarisService;
+import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
@@ -37,6 +43,7 @@ import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
+import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
     private final String polarisCliName;
@@ -83,6 +90,24 @@ public class PolarisWorkflowStepFactory {
         return executePolarisCli;
     }
 
+    public RemoteSubStep<String>  createGetPolarisCliResponseContentStep() {
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(logger, build.getWorkspace().getRemote());
+        final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
+        return getPolarisCliResponseContentRemoteStep;
+    }
+
+    public GetTotalIssueCount createGetTotalIssueCount() throws AbortException {
+        final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
+        if (polarisGlobalConfig == null) {
+            throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
+        }
+        final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
+        final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
+        final PolarisService polarisService = polarisServicesFactory.createPolarisService();
+        return new GetTotalIssueCount(logger, polarisService);
+    }
+
+    // Remove build from this class
     public AbstractBuild<?, ?> getBuild() {
         return build;
     }

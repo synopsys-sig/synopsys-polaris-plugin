@@ -55,10 +55,14 @@ public class PolarisBuildStep extends Builder {
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
     private final String polarisArguments;
 
+    @HelpMarkdown("Check this box to wait for issues ")
+    private final WaitForIssues waitForIssues;
+
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments) {
+    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final WaitForIssues waitForIssues) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
+        this.waitForIssues = waitForIssues;
     }
 
     public String getPolarisArguments() {
@@ -67,6 +71,10 @@ public class PolarisBuildStep extends Builder {
 
     public String getPolarisCliName() {
         return polarisCliName;
+    }
+
+    public WaitForIssues getWaitForIssues() {
+        return waitForIssues;
     }
 
     @Override
@@ -84,7 +92,7 @@ public class PolarisBuildStep extends Builder {
         validateBuild(build);
 
         final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build, launcher, listener);
-        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(polarisWorkflowStepFactory);
+        final PolarisBuildStepWorker polarisBuildStepWorker = new PolarisBuildStepWorker(waitForIssues, polarisWorkflowStepFactory);
         final boolean result = polarisBuildStepWorker.perform();
         return result;
     }

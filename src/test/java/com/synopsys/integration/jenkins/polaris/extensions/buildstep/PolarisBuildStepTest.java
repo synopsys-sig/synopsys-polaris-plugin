@@ -4,9 +4,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,14 +19,21 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.synopsys.integration.function.ThrowingFunction;
+import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.CreatePolarisEnvironment;
 import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
+import com.synopsys.integration.jenkins.polaris.substeps.GetTotalIssueCount;
+import com.synopsys.integration.log.IntLogger;
+import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
+import com.synopsys.integration.polaris.common.service.PolarisService;
+import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
+import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 
 import hudson.EnvVars;
+import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -37,10 +44,11 @@ import hudson.model.JDK;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import jenkins.model.GlobalConfiguration;
 
-@PowerMockIgnore({"javax.crypto.*", "javax.net.ssl.*" })
+@PowerMockIgnore({ "javax.crypto.*", "javax.net.ssl.*" })
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({AbstractBuild.class, JDK.class, Launcher.class, Launcher.ProcStarter.class, PolarisCli.class, StepWorkflow.class })
+@PrepareForTest({ AbstractBuild.class, JDK.class, Launcher.class, Launcher.ProcStarter.class, PolarisCli.class, StepWorkflow.class, GlobalConfiguration.class })
 public class PolarisBuildStepTest {
     private static final String POLARIS_ARGUMENTS = "--detect.docker.passthrough.service.timeout=240000 --detect.cleanup=false --detect.source.path=$JAVA_HOME --detect.project.name=\"Test Project'\"";
     private static final String WORKSPACE_REL_PATH = "out/test/PolarisBuildStepTest/testPerform/workspace";
@@ -91,18 +99,39 @@ public class PolarisBuildStepTest {
         PowerMockito.mockStatic(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName("testPolarisCliName")).thenReturn(Optional.of(polarisCli));
 
+        final PolarisGlobalConfig polarisGlobalConfig = Mockito.mock(PolarisGlobalConfig.class);
+        final ExtensionList extensionList = Mockito.mock(ExtensionList.class);
+        PowerMockito.mockStatic(GlobalConfiguration.class);
+        Mockito.when(GlobalConfiguration.all()).thenReturn(extensionList);
+        Mockito.when(extensionList.get(PolarisGlobalConfig.class)).thenReturn(polarisGlobalConfig);
+
+        final PolarisServerConfig polarisServerConfig = Mockito.mock(PolarisServerConfig.class);
+        Mockito.when(polarisGlobalConfig.getPolarisServerConfig()).thenReturn(polarisServerConfig);
+
+        final PolarisServicesFactory polarisServicesFactory = Mockito.mock(PolarisServicesFactory.class);
+        Mockito.when(polarisServerConfig.createPolarisServicesFactory(Mockito.any(IntLogger.class))).thenReturn(polarisServicesFactory);
+
+        final PolarisService polarisService = Mockito.mock(PolarisService.class);
+        Mockito.when(polarisServicesFactory.createPolarisService()).thenReturn(polarisService);
 
         final StepWorkflow.Builder stepWorkflowBuilder = Mockito.mock(StepWorkflow.Builder.class);
         PowerMockito.mockStatic(StepWorkflow.class);
-        Mockito.when(StepWorkflow.first(Mockito.any(CreatePolarisEnvironment.class))).thenReturn(stepWorkflowBuilder);
-        Mockito.when(stepWorkflowBuilder.then(Mockito.any(RemoteSubStep.class))).thenReturn(stepWorkflowBuilder);
-        Mockito.when(stepWorkflowBuilder.then(Mockito.any(ExecutePolarisCli.class))).thenReturn(stepWorkflowBuilder);
+        Mockito.when(StepWorkflow.first(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
+        Mockito.when(stepWorkflowBuilder.then(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
+
+        final StepWorkflow.ConditionalBuilder conditionalBuilder = Mockito.mock(StepWorkflow.ConditionalBuilder.class);
+        Mockito.when(stepWorkflowBuilder.andSometimes(Mockito.any(SubStep.class))).thenReturn(conditionalBuilder);
+        Mockito.when(conditionalBuilder.then(Mockito.any(SubStep.class))).thenReturn(conditionalBuilder);
+        Mockito.when(conditionalBuilder.butOnlyIf(Mockito.any(Object.class), Mockito.any(Predicate.class))).thenReturn(stepWorkflowBuilder);
+
         final StepWorkflowResponse stepWorkflowResponse = Mockito.mock(StepWorkflowResponse.class);
         Mockito.when(stepWorkflowBuilder.run()).thenReturn(stepWorkflowResponse);
         Mockito.when(stepWorkflowResponse.handleResponse(Mockito.any(ThrowingFunction.class))).thenReturn(true);
 
+        final WaitForIssues waitForIssues = Mockito.mock(WaitForIssues.class);
+
         // Test
-        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS);
+        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, waitForIssues);
         boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify
@@ -113,6 +142,9 @@ public class PolarisBuildStepTest {
         // so all we can verify is that the methods get called (with something).
         Mockito.verify(stepWorkflowBuilder).then(Mockito.any(RemoteSubStep.class));
         Mockito.verify(stepWorkflowBuilder).then(Mockito.any(ExecutePolarisCli.class));
+        Mockito.verify(stepWorkflowBuilder).andSometimes(Mockito.any(RemoteSubStep.class));
+        Mockito.verify(conditionalBuilder).then(Mockito.any(GetTotalIssueCount.class));
+        Mockito.verify(conditionalBuilder).butOnlyIf(Mockito.any(WaitForIssues.class), Mockito.any(Predicate.class));
         Mockito.verify(stepWorkflowBuilder).run();
         Mockito.verify(stepWorkflowResponse).handleResponse(Mockito.any(ThrowingFunction.class));
     }
