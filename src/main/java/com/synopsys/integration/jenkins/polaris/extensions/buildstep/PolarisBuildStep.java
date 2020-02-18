@@ -33,8 +33,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
+import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 
-import hudson.AbortException;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -89,8 +89,6 @@ public class PolarisBuildStep extends Builder {
 
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
-        validateBuild(build);
-
         final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build.getBuiltOn(), build.getWorkspace(), build.getEnvironment(listener), launcher, listener);
         final PolarisBuildStepWorkflow polarisBuildStepWorkflow = new PolarisBuildStepWorkflow(waitForIssues, polarisWorkflowStepFactory, build);
         final boolean result = polarisBuildStepWorkflow.perform();
@@ -128,15 +126,6 @@ public class PolarisBuildStep extends Builder {
         @Nonnull
         public String getDisplayName() {
             return DISPLAY_NAME;
-        }
-    }
-
-    private void validateBuild(final AbstractBuild<?, ?> build) throws AbortException {
-        if (build.getWorkspace() == null) {
-            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-        }
-        if (build.getBuiltOn() == null) {
-            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
         }
     }
 }

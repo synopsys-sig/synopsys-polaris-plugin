@@ -20,7 +20,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.synopsys.integration.jenkins.polaris.substeps;
+package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,7 +35,7 @@ import jenkins.security.MasterToSlaveCallable;
 
 public class GetPathToPolarisCli extends MasterToSlaveCallable<String, IntegrationException> {
     private static final long serialVersionUID = -8823365241230615671L;
-    private String polarisCliHome;
+    private final String polarisCliHome;
 
     public GetPathToPolarisCli(final String polarisCliHome) {
         this.polarisCliHome = polarisCliHome;

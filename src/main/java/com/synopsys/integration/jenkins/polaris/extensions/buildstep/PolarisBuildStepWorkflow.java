@@ -28,9 +28,11 @@ import java.util.Objects;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
+import hudson.AbortException;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 
@@ -46,6 +48,7 @@ public class PolarisBuildStepWorkflow {
     }
 
     public boolean perform() throws InterruptedException, IOException {
+        validate(build);
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
         return StepWorkflow
                    .first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
@@ -57,6 +60,15 @@ public class PolarisBuildStepWorkflow {
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));
+    }
+
+    private void validate(final AbstractBuild<?, ?> build) throws AbortException {
+        if (build.getWorkspace() == null) {
+            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
+        }
+        if (build.getBuiltOn() == null) {
+            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
+        }
     }
     
     private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Object> stepWorkflowResponse) {

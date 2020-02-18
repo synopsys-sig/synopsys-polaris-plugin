@@ -22,21 +22,39 @@
  */
 package com.synopsys.integration.jenkins.polaris.extensions.pipeline;
 
-import com.synopsys.integration.jenkins.polaris.extensions.buildstep.PolarisWorkflowStepFactory;
+import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
+
+import hudson.AbortException;
+import hudson.FilePath;
+import hudson.model.Node;
 
 public class PolarisPipelineWorkflow {
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
+    private final Node node;
+    private final FilePath workspace;
 
-    public PolarisPipelineWorkflow(final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
+    public PolarisPipelineWorkflow(final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final Node node, final FilePath workspace) {
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
+        this.node = node;
+        this.workspace = workspace;
     }
 
     public Integer perform() throws Exception {
-                    return StepWorkflow.first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
-                               .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
-                               .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
-                               .run()
-                               .getDataOrThrowException();
+        validate();
+        return StepWorkflow.first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
+                   .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
+                   .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
+                   .run()
+                   .getDataOrThrowException();
+    }
+
+    private void validate() throws AbortException {
+        if (node == null) {
+            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
+        }
+        if (workspace == null) {
+            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
+        }
     }
 }

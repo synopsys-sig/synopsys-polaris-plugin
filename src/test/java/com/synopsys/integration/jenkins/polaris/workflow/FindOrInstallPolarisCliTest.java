@@ -1,4 +1,4 @@
-package com.synopsys.integration.jenkins.polaris.substeps;
+package com.synopsys.integration.jenkins.polaris.workflow;
 
 import static org.junit.Assert.assertEquals;
 

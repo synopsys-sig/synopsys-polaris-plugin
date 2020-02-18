@@ -43,10 +43,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.polaris.extensions.buildstep.PolarisWorkflowStepFactory;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
+import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 
-import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -130,7 +129,7 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
 
     }
 
-    public class Execution extends SynchronousNonBlockingStepExecution {
+    public class Execution extends SynchronousNonBlockingStepExecution<Integer> {
         private static final long serialVersionUID = -3799159740768688972L;
         private final transient TaskListener listener;
         private final transient EnvVars envVars;
@@ -149,20 +148,9 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
 
         @Override
         protected Integer run() throws Exception {
-            validate();
-
             final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCli, arguments, node, workspace, envVars, launcher, listener);
-            final PolarisPipelineWorkflow polarisPipelineWorkflow = new PolarisPipelineWorkflow(polarisWorkflowStepFactory);
+            final PolarisPipelineWorkflow polarisPipelineWorkflow = new PolarisPipelineWorkflow(polarisWorkflowStepFactory, node, workspace);
             return polarisPipelineWorkflow.perform();
-        }
-
-        private void validate() throws AbortException {
-            if (node == null) {
-                throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
-            }
-            if (workspace == null) {
-                throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-            }
         }
     }
 }
