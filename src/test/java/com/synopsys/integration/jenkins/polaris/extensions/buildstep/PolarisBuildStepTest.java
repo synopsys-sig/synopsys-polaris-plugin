@@ -21,8 +21,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.synopsys.integration.function.ThrowingFunction;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.ExecutePolarisCli;
-import com.synopsys.integration.jenkins.polaris.substeps.GetTotalIssueCount;
+import com.synopsys.integration.jenkins.polaris.workflow.ExecutePolarisCli;
+import com.synopsys.integration.jenkins.polaris.workflow.GetTotalIssueCount;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
 import com.synopsys.integration.polaris.common.service.PolarisService;
@@ -132,7 +132,7 @@ public class PolarisBuildStepTest {
 
         // Test
         final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, waitForIssues);
-        boolean result = polarisBuildStep.perform(build, launcher, buildListener);
+        final boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify
         assertTrue(result);
