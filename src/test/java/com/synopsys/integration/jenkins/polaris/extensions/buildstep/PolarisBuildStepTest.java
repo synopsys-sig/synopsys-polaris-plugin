@@ -56,12 +56,9 @@ public class PolarisBuildStepTest {
     @Rule
     public JenkinsRule jenkinsRule = new JenkinsRule();
 
-    // TODO: To improve this test (to test more of PolarisBuildStep.perform(), we could refactor PolarisBuildStep to:
-    // - Separate object creation (IntEnvironmentVariables, CreatePolarisEnvironment, GetPathToPolarisCli, ExecutePolarisCli,
-    //   and maybe JenkinsIntLogger) out of PolarisBuildStep, so the objects can be mocked in this test.
-    //   Then we can verify that they are created correctly, and improve the post-test verification.
-    // - Separate afterPerform() out to a separate class, so it can be tested there, and this test can
-    //   verify that it gets passed to stepWorkflowResponse.handleResponse()
+    // TODO Once unit tests PolarisBuildStepWorkflowTest and PolarisWorkflowStepFactoryTest are in place,
+    // perhaps this test could/should be scaled back?
+    // TODO move setup/mocking out of the test for readability
     @Test
     public void testPerform() throws Throwable {
         // Setup
@@ -138,8 +135,6 @@ public class PolarisBuildStepTest {
         assertTrue(result);
         Mockito.verify(polarisCli).forEnvironment(envVars);
         Mockito.verify(polarisCli).forNode(node, buildListener);
-        // The objects passed to the methods verified below are created within PolarisBuildStep (see TODO above),
-        // so all we can verify is that the methods get called (with something).
         Mockito.verify(stepWorkflowBuilder).then(Mockito.any(RemoteSubStep.class));
         Mockito.verify(stepWorkflowBuilder).then(Mockito.any(ExecutePolarisCli.class));
         Mockito.verify(stepWorkflowBuilder).andSometimes(Mockito.any(RemoteSubStep.class));

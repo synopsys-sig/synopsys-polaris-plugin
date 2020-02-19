@@ -30,6 +30,7 @@ import hudson.model.Node;
 @PrepareForTest({ StepWorkflow.class })
 public class PolarisBuildStepWorkflowTest {
 
+    // TODO move setup/mocking out of the test for readability
     @Test
     public void test() throws IOException, InterruptedException {
 
@@ -85,5 +86,6 @@ public class PolarisBuildStepWorkflowTest {
         Mockito.verify(conditionalBuilder).then(getTotalIssueCount);
         Mockito.verify(conditionalBuilder).then(responseHandler);
         Mockito.verify(conditionalBuilder).butOnlyIf(Mockito.eq(waitForIssues), Mockito.any(Predicate.class));
+        Mockito.verify(response).handleResponse(Mockito.any(ThrowingFunction.class));
     }
 }
