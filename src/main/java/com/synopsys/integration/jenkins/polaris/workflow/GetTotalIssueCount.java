@@ -30,7 +30,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
-import com.synopsys.integration.polaris.common.api.PolarisComponent;
+import com.synopsys.integration.polaris.common.api.job.model.Job;
+import com.synopsys.integration.polaris.common.api.job.model.JobAttributes;
+import com.synopsys.integration.polaris.common.api.job.model.JobResource;
+import com.synopsys.integration.polaris.common.api.job.model.JobStatus;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
@@ -42,6 +45,7 @@ import com.synopsys.integration.polaris.common.cli.model.PolarisCliResponseModel
 import com.synopsys.integration.polaris.common.cli.model.ScanInfo;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.polaris.common.request.PolarisRequestFactory;
+import com.synopsys.integration.polaris.common.service.JobService;
 import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
@@ -49,10 +53,12 @@ import com.synopsys.integration.stepworkflow.SubStepResponse;
 public class GetTotalIssueCount implements SubStep<String, Integer> {
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
+    private final JobService jobService;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService) {
         this.logger = logger;
         this.polarisService = polarisService;
+        this.jobService = jobService;
     }
 
     @Override
@@ -92,8 +98,17 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                final PolarisComponent response = polarisService.get(PolarisComponent.class, PolarisRequestFactory.createDefaultBuilder().uri(jobStatusUrl).build());
-                // TODO: Check for job status
+                // TODO: This is probably a common function-- we should move this into jobService
+                final JobStatus jobStatus = jobService.getJobByUrl(jobStatusUrl)
+                                                .map(JobResource::getData)
+                                                .map(Job::getAttributes)
+                                                .map(JobAttributes::getStatus)
+                                                .orElseThrow(() -> new PolarisIntegrationException("Could not get job status from url " + jobStatusUrl + " has the cli-scan.json been modified?"));
+                final JobStatus.StateEnum stateEnum = jobStatus.getState();
+                if (JobStatus.StateEnum.QUEUED.equals(stateEnum) || JobStatus.StateEnum.RUNNING.equals(stateEnum) || JobStatus.StateEnum.DISPATCHED.equals(stateEnum)) {
+                    logger.alwaysLog("Waiting for jobs to complete");
+                    Thread.sleep(500);
+                }
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
@@ -103,7 +118,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                                                .mapToInt(CountV0Attributes::getValue)
                                                .sum());
 
-        } catch (final IntegrationException e) {
+        } catch (final InterruptedException | IntegrationException e) {
             return SubStepResponse.FAILURE(e);
         }
     }
