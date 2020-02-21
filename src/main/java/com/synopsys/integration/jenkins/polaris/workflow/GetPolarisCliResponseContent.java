@@ -24,7 +24,6 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
@@ -42,7 +41,7 @@ public class GetPolarisCliResponseContent extends MasterToSlaveCallable<String, 
     @Override
     public String call() throws PolarisIntegrationException {
         try {
-            return Arrays.toString(Files.readAllBytes(PolarisCliResponseUtility.getDefaultPathToJson(workspaceRemotePath)));
+            return new String(Files.readAllBytes(PolarisCliResponseUtility.getDefaultPathToJson(workspaceRemotePath)));
         } catch (final IOException e) {
             throw new PolarisIntegrationException("There was an error getting the Polaris CLI response.", e);
         }

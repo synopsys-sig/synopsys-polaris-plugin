@@ -29,6 +29,7 @@ import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
+import com.synopsys.integration.polaris.common.service.JobService;
 import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.SubStep;
@@ -55,7 +56,6 @@ public class PolarisWorkflowStepFactory {
     // These fields are lazily initialized; inside this class: use getOrCreate...() to get these values
     private IntEnvironmentVariables intEnvironmentVariables = null;
     private JenkinsIntLogger logger = null;
-
 
     public PolarisWorkflowStepFactory(final String polarisCliName, final String polarisArguments, final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
         this.polarisCliName = polarisCliName;
@@ -104,8 +104,9 @@ public class PolarisWorkflowStepFactory {
         }
         final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
         final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
+        final JobService jobService = polarisServicesFactory.createJobService();
         final PolarisService polarisService = polarisServicesFactory.createPolarisService();
-        return new GetTotalIssueCount(logger, polarisService);
+        return new GetTotalIssueCount(logger, polarisService, jobService);
     }
 
     public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {
