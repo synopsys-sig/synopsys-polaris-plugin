@@ -131,7 +131,10 @@ public class PolarisBuildStepTest {
         final WaitForIssues waitForIssues = Mockito.mock(WaitForIssues.class);
 
         // Test
-        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep("testPolarisCliName", POLARIS_ARGUMENTS, waitForIssues);
+        final PolarisBuildStep polarisBuildStep = new PolarisBuildStep();
+        polarisBuildStep.setPolarisCliName("testPolarisCliName");
+        polarisBuildStep.setPolarisArguments(POLARIS_ARGUMENTS);
+        polarisBuildStep.setWaitForIssues(waitForIssues);
         final boolean result = polarisBuildStep.perform(build, launcher, buildListener);
 
         // Verify

@@ -27,12 +27,11 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
@@ -43,7 +42,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
-import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 
 import hudson.EnvVars;
@@ -52,37 +50,62 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
-import hudson.tools.ToolInstallation;
-import hudson.util.ListBoxModel;
 
-public class ExecutePolarisCliStep extends Step implements Serializable {
-    public static final String DISPLAY_NAME = "Execute Synopsys Polaris CLI";
-    public static final String PIPELINE_NAME = "polaris";
+public class PolarisIssueCheckStep extends Step implements Serializable {
+    public static final String DISPLAY_NAME = "Check for issues in Polaris found by a previous execution of the CLI";
+    public static final String PIPELINE_NAME = "polarisIssueCheck";
     private static final long serialVersionUID = -2698425344634481146L;
 
-    @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
-    private final String arguments;
+    @Nullable
+    @HelpMarkdown("Check this box to return the issue count as an integer instead of throwing an exception")
+    private Boolean returnIssueCount;
 
     @Nullable
-    @HelpMarkdown("The Polaris CLI installation to execute")
-    private String polarisCli;
+    @HelpMarkdown("Path to the cli-scan.json file. Defaults to $WORKSPACE/.synopsys/polaris/cli-scan.json if blank.")
+    private String pathToCliScanJson;
+
+    @Nullable
+    @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete.")
+    private Integer jobTimeoutInMinutes;
 
     @DataBoundConstructor
-    public ExecutePolarisCliStep(final String arguments) {
-        this.arguments = arguments;
+    public PolarisIssueCheckStep() {
     }
 
-    public String getPolarisCli() {
-        return polarisCli;
+    @Nullable
+    public String getPathToCliScanJson() {
+        if (StringUtils.isBlank(pathToCliScanJson)) {
+            return null;
+        }
+        return pathToCliScanJson;
     }
 
     @DataBoundSetter
-    public void setPolarisCli(final String polarisCli) {
-        this.polarisCli = polarisCli;
+    public void setPathToCliScanJson(final String pathToCliScanJson) {
+        this.pathToCliScanJson = pathToCliScanJson;
     }
 
-    public String getArguments() {
-        return arguments;
+    @Nullable
+    public Integer getJobTimeoutInMinutes() {
+        return jobTimeoutInMinutes;
+    }
+
+    @DataBoundSetter
+    public void setJobTimeoutInMinutes(final Integer jobTimeoutInMinutes) {
+        this.jobTimeoutInMinutes = jobTimeoutInMinutes;
+    }
+
+    @Nullable
+    public Boolean getReturnIssueCount() {
+        if (!Boolean.TRUE.equals(returnIssueCount)) {
+            return null;
+        }
+        return returnIssueCount;
+    }
+
+    @DataBoundSetter
+    public void setReturnIssueCount(final Boolean returnIssueCount) {
+        this.returnIssueCount = returnIssueCount;
     }
 
     @Override
@@ -95,20 +118,7 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
     public static final class DescriptorImpl extends StepDescriptor {
         public DescriptorImpl() {
             // Nothing to do here, but we must provide an explicit default constructor or else some versions of the Pipeline syntax generator will break
-            // -rotte JAN 2020
-        }
-
-        public ListBoxModel doFillPolarisCliItems() {
-            final PolarisCli.DescriptorImpl polarisCliToolInstallationDescriptor = ToolInstallation.all().get(PolarisCli.DescriptorImpl.class);
-
-            if (polarisCliToolInstallationDescriptor == null) {
-                return new ListBoxModel();
-            }
-
-            return Stream.of(polarisCliToolInstallationDescriptor.getInstallations())
-                       .map(PolarisCli::getName)
-                       .map(ListBoxModel.Option::new)
-                       .collect(Collectors.toCollection(ListBoxModel::new));
+            // -rotte FEB 2020
         }
 
         @Override
@@ -149,8 +159,8 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
         @Override
         protected Integer run() throws Exception {
             final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(node, workspace, envVars, launcher, listener);
-            final ExecutePolarisCliStepWorkflow executePolarisCliStepWorkflow = new ExecutePolarisCliStepWorkflow(polarisCli, arguments, polarisWorkflowStepFactory, node, workspace);
-            return executePolarisCliStepWorkflow.perform();
+            final PolarisIssueCheckStepWorkflow polarisIssueCheckStepWorkflow = new PolarisIssueCheckStepWorkflow(jobTimeoutInMinutes, returnIssueCount, pathToCliScanJson, polarisWorkflowStepFactory);
+            return polarisIssueCheckStepWorkflow.perform();
         }
     }
 }

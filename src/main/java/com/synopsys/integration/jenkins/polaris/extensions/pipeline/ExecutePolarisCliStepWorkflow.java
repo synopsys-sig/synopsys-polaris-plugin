@@ -29,12 +29,16 @@ import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.Node;
 
-public class PolarisPipelineWorkflow {
+public class ExecutePolarisCliStepWorkflow {
+    private final String polarisCliName;
+    private final String polarisArguments;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
     private final Node node;
     private final FilePath workspace;
 
-    public PolarisPipelineWorkflow(final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final Node node, final FilePath workspace) {
+    public ExecutePolarisCliStepWorkflow(final String polarisCliName, final String polarisArguments, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final Node node, final FilePath workspace) {
+        this.polarisCliName = polarisCliName;
+        this.polarisArguments = polarisArguments;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
         this.node = node;
         this.workspace = workspace;
@@ -43,8 +47,8 @@ public class PolarisPipelineWorkflow {
     public Integer perform() throws Exception {
         validate();
         return StepWorkflow.first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
-                   .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
-                   .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
+                   .then(polarisWorkflowStepFactory.createStepFindPolarisCli(polarisCliName))
+                   .then(polarisWorkflowStepFactory.createStepExecutePolarisCli(polarisArguments))
                    .run()
                    .getDataOrThrowException();
     }

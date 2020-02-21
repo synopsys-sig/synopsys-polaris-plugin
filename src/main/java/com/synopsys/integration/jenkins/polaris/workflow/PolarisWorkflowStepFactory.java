@@ -23,6 +23,7 @@
 package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import com.synopsys.integration.function.ThrowingConsumer;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
@@ -45,8 +46,6 @@ import hudson.model.TaskListener;
 import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
-    private final String polarisCliName;
-    private final String polarisArguments;
     private final Node node;
     private final FilePath workspace;
     private final EnvVars envVars;
@@ -57,9 +56,7 @@ public class PolarisWorkflowStepFactory {
     private IntEnvironmentVariables intEnvironmentVariables = null;
     private JenkinsIntLogger logger = null;
 
-    public PolarisWorkflowStepFactory(final String polarisCliName, final String polarisArguments, final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
-        this.polarisCliName = polarisCliName;
-        this.polarisArguments = polarisArguments;
+    public PolarisWorkflowStepFactory(final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
         this.node = node;
         this.workspace = workspace;
         this.envVars = envVars;
@@ -73,7 +70,7 @@ public class PolarisWorkflowStepFactory {
         return new CreatePolarisEnvironment(logger, intEnvironmentVariables);
     }
 
-    public RemoteSubStep<String> createStepFindPolarisCli() throws IOException, InterruptedException {
+    public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
         PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
                                         "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
@@ -84,20 +81,18 @@ public class PolarisWorkflowStepFactory {
         return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
     }
 
-    public ExecutePolarisCli createStepExecutePolarisCli() throws IOException, InterruptedException {
+    public ExecutePolarisCli createStepExecutePolarisCli(final String polarisArguments) throws IOException, InterruptedException {
         final JenkinsIntLogger logger = getOrCreateLogger();
         final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
-        return executePolarisCli;
+        return new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
     }
 
-    public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
-        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
-        final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
-        return getPolarisCliResponseContentRemoteStep;
+    public RemoteSubStep<String> createStepGetPolarisCliResponseContent(final String pathToCliScanJson) {
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(pathToCliScanJson, workspace.getRemote());
+        return RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
     }
 
-    public GetTotalIssueCount createStepGetTotalIssueCount() throws AbortException {
+    public GetTotalIssueCount createStepGetTotalIssueCount(final Integer jobTimeoutInMinutes) throws AbortException {
         final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
         if (polarisGlobalConfig == null) {
             throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
@@ -106,7 +101,7 @@ public class PolarisWorkflowStepFactory {
         final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
         final JobService jobService = polarisServicesFactory.createJobService();
         final PolarisService polarisService = polarisServicesFactory.createPolarisService();
-        return new GetTotalIssueCount(logger, polarisService, jobService);
+        return new GetTotalIssueCount(logger, polarisService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
     }
 
     public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {
@@ -128,4 +123,5 @@ public class PolarisWorkflowStepFactory {
         }
         return intEnvironmentVariables;
     }
+
 }

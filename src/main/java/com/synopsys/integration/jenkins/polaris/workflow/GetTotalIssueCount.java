@@ -22,7 +22,6 @@
  */
 package com.synopsys.integration.jenkins.polaris.workflow;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -51,11 +50,13 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
     private final JobService jobService;
+    private final Integer jobTimeoutInMinutes;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService, final int jobTimeoutInMinutes) {
         this.logger = logger;
         this.polarisService = polarisService;
         this.jobService = jobService;
+        this.jobTimeoutInMinutes = jobTimeoutInMinutes;
     }
 
     @Override
@@ -95,7 +96,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                jobService.waitForJobToCompleteByUrl(jobStatusUrl, Duration.ofMinutes(30).getSeconds(), JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+                jobService.waitForJobToCompleteByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
