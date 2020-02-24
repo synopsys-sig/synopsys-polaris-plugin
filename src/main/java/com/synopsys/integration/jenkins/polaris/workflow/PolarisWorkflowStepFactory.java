@@ -31,6 +31,7 @@ import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
 import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
+import com.synopsys.integration.stepworkflow.StepWorkflowBuilder;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 import com.synopsys.integration.util.IntEnvironmentVariables;
@@ -120,6 +121,9 @@ public class PolarisWorkflowStepFactory {
         return logger;
     }
 
+    public <T> StepWorkflowBuilder<T> createStepWorkflowBuilder(final SubStep<Object, T> firstStep) {
+        return new StepWorkflowBuilder(firstStep);
+    }
     private IntEnvironmentVariables getOrCreateEnvironmentVariables() {
         if (intEnvironmentVariables == null) {
             intEnvironmentVariables = new IntEnvironmentVariables(false);
