@@ -6,8 +6,6 @@ import java.util.function.Predicate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.synopsys.integration.function.ThrowingConsumer;
@@ -17,7 +15,8 @@ import com.synopsys.integration.jenkins.polaris.workflow.CreatePolarisEnvironmen
 import com.synopsys.integration.jenkins.polaris.workflow.ExecutePolarisCli;
 import com.synopsys.integration.jenkins.polaris.workflow.GetTotalIssueCount;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
-import com.synopsys.integration.stepworkflow.StepWorkflow;
+import com.synopsys.integration.stepworkflow.StepWorkflowBuilder;
+import com.synopsys.integration.stepworkflow.StepWorkflowConditionalBuilder;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
@@ -27,7 +26,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.Node;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ StepWorkflow.class })
 public class PolarisBuildStepWorkflowTest {
 
     // TODO move setup/mocking out of the test for readability
@@ -59,15 +57,12 @@ public class PolarisBuildStepWorkflowTest {
         final SubStep<Integer, Object> responseHandler = Mockito.mock(SubStep.class);
         Mockito.when(polarisWorkflowStepFactory.createStepWithConsumer(Mockito.any(ThrowingConsumer.class))).thenReturn(responseHandler);
 
-        // Mock the StepWorkflow and the objects it creates
-        // This requires that the first workflow step = createPolarisEnvironment
-        PowerMockito.mockStatic(StepWorkflow.class);
-        final StepWorkflow.Builder workflowBuilder = Mockito.mock(StepWorkflow.Builder.class);
-        Mockito.when(StepWorkflow.first(createPolarisEnvironment)).thenReturn(workflowBuilder);
+        final StepWorkflowBuilder workflowBuilder = Mockito.mock(StepWorkflowBuilder.class);
+        Mockito.when(polarisWorkflowStepFactory.createStepWorkflowBuilder(createPolarisEnvironment)).thenReturn(workflowBuilder);
 
         // This should let the creation of almost any workflow run; creation of specific steps are verified after the test
         Mockito.when(workflowBuilder.then(Mockito.any(SubStep.class))).thenReturn(workflowBuilder);
-        final StepWorkflow.ConditionalBuilder conditionalBuilder = Mockito.mock(StepWorkflow.ConditionalBuilder.class);
+        final StepWorkflowConditionalBuilder conditionalBuilder = Mockito.mock(StepWorkflowConditionalBuilder.class);
         Mockito.when(workflowBuilder.andSometimes(Mockito.any(SubStep.class))).thenReturn(conditionalBuilder);
         Mockito.when(conditionalBuilder.then(Mockito.any(SubStep.class))).thenReturn(conditionalBuilder);
         Mockito.when(conditionalBuilder.butOnlyIf(Mockito.any(WaitForIssues.class), Mockito.any(Predicate.class))).thenReturn(workflowBuilder);
