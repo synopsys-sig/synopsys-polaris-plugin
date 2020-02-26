@@ -108,6 +108,9 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
             return SubStepResponse.SUCCESS(totalIssues);
 
         } catch (final InterruptedException | IntegrationException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             return SubStepResponse.FAILURE(e);
         }
     }
