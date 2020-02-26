@@ -1,9 +1,9 @@
 package com.synopsys.integration.jenkins.polaris.workflow;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,38 +39,51 @@ import jenkins.model.GlobalConfiguration;
 // PowerMock's solution for static methods is pretty ugly.
 // Next step: reduce the use of static methods in the factory.
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ GlobalConfiguration.class, JenkinsVersionHelper.class, PolarisCli.class, RemoteSubStep.class })
+@PrepareForTest({ GlobalConfiguration.class, PolarisCli.class, PolarisWorkflowStepFactory.class })
 public class PolarisWorkflowStepFactoryTest {
 
     private static final String POLARIS_CLI_NAME = "testpolariscli";
     private static final String POLARIS_ARGUMENTS = "test polaris arguments";
+    public static final String POLARIS_CLI_HOME = "testhome";
     private static PolarisWorkflowStepFactory factory;
     private static ByteArrayOutputStream logOutputStream;
     private static EnvVars envVars;
     private static Node node;
     private static TaskListener listener;
     private static Launcher launcher;
+    private static VirtualChannel channel;
+    private static final String WORKSPACE_REMOTE = "test workspace remoate";
 
     @BeforeClass
-    public static void setup() {
+    public static void setup() throws Exception {
 
         node = Mockito.mock(Node.class);
         final FilePath workspace = Mockito.mock(FilePath.class);
+        Mockito.when(workspace.getRemote()).thenReturn(WORKSPACE_REMOTE);
         final Map<String, String> testEnvVarsMap = new HashMap<>();
         testEnvVarsMap.put("envvarkey", "env var value");
         envVars = new EnvVars(testEnvVarsMap);
         launcher = Mockito.mock(Launcher.class);
+        channel = Mockito.mock(VirtualChannel.class);
+        Mockito.when(launcher.getChannel()).thenReturn(channel);
         listener = Mockito.mock(TaskListener.class);
 
         logOutputStream = new ByteArrayOutputStream();
         final PrintStream logPrintStream = new PrintStream(logOutputStream);
         Mockito.when(listener.getLogger()).thenReturn(logPrintStream);
 
+        // new JenkinsVersionHelper()
+        final JenkinsVersionHelper jenkinsVersionHelper = Mockito.mock(JenkinsVersionHelper.class);
+        Mockito.when(jenkinsVersionHelper.getPluginVersion("synopsys-polaris")).thenReturn("1.2.3");
+        PowerMockito.whenNew(JenkinsVersionHelper.class)
+            .withNoArguments()
+            .thenReturn(jenkinsVersionHelper);
+
         factory = new PolarisWorkflowStepFactory(POLARIS_CLI_NAME, POLARIS_ARGUMENTS, node, workspace, envVars, launcher, listener);
     }
 
     @Test
-    public void testCreateStepCreatePolarisEnvironment() throws IOException, InterruptedException {
+    public void testCreateStepCreatePolarisEnvironment() throws Exception {
 
         // Test factory method
         final CreatePolarisEnvironment createPolarisEnvironment = factory.createStepCreatePolarisEnvironment();
@@ -89,8 +102,8 @@ public class PolarisWorkflowStepFactoryTest {
         Mockito.when(polarisServerConfigBuilder.getProperties()).thenReturn(builderProperties);
         final PolarisServerConfig polarisServerConfig = Mockito.mock(PolarisServerConfig.class);
         Mockito.when(polarisServerConfigBuilder.build()).thenReturn(polarisServerConfig);
-        PowerMockito.mockStatic(JenkinsVersionHelper.class);
-        Mockito.when(JenkinsVersionHelper.getPluginVersion("synopsys-polaris")).thenReturn("1.2.3");
+//        PowerMockito.mockStatic(JenkinsVersionHelper.class);
+//        Mockito.when(JenkinsVersionHelper.getPluginVersion("synopsys-polaris")).thenReturn("1.2.3");
 
         // Test factory-created object
         final SubStepResponse<Object> response =  createPolarisEnvironment.run();
@@ -103,26 +116,52 @@ public class PolarisWorkflowStepFactoryTest {
     }
 
     @Test
-    public void testCreateStepFindPolarisCli() throws IOException, InterruptedException {
+    public void testCreateStepFindPolarisCli() throws Exception {
 
         // TODO should some/all of this mocking be moved to setup()?
         // (Some of this may break the other test.)
         final VirtualChannel channel = Mockito.mock(VirtualChannel.class);
         Mockito.when(launcher.getChannel()).thenReturn(channel);
-        PowerMockito.mockStatic(RemoteSubStep.class);
         PowerMockito.mockStatic(PolarisCli.class);
         final PolarisCli polarisCli = Mockito.mock(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName(POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
-        Mockito.when(polarisCli.getHome()).thenReturn("testhome");
+        Mockito.when(polarisCli.getHome()).thenReturn(POLARIS_CLI_HOME);
         Mockito.when(polarisCli.forEnvironment(envVars)).thenReturn(polarisCli);
         Mockito.when(polarisCli.forNode(node, listener)).thenReturn(polarisCli);
+
+        final GetPathToPolarisCli getPathToPolarisCli = Mockito.mock(GetPathToPolarisCli.class);
+        PowerMockito.whenNew(GetPathToPolarisCli.class)
+            .withArguments(POLARIS_CLI_HOME)
+            .thenReturn(getPathToPolarisCli);
+
+        final RemoteSubStep<String> remoteSubStep = Mockito.mock(RemoteSubStep.class);
+        PowerMockito.whenNew(RemoteSubStep.class)
+            .withArguments(channel, getPathToPolarisCli)
+            .thenReturn(remoteSubStep);
 
         // Test factory method
         final RemoteSubStep<String> createPolarisEnvironment = factory.createStepFindPolarisCli();
 
-        // verify: polarisCli.getHome()
-        Mockito.verify(polarisCli).getHome();
+        assertEquals(remoteSubStep, createPolarisEnvironment);
+    }
 
-        // TODO After the code is less reliant on static methods: expand verification
+    private void youllNeedThisLater() throws Exception {
+        // You'll need this code when testing createStepGetPolarisCliResponseContent
+
+        // new GetPolarisCliResponseContent(workspace.getRemote());
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = Mockito.mock(GetPolarisCliResponseContent.class);
+        PowerMockito.whenNew(GetPolarisCliResponseContent.class)
+            .withArguments(WORKSPACE_REMOTE)
+            .thenReturn(getPolarisCliResponseContent);
+
+        // new RemoteSubStep<>(launcher.getChannel(), getPolarisCliResponseContent);
+        final RemoteSubStep<String> remoteSubStep = Mockito.mock(RemoteSubStep.class);
+        PowerMockito.whenNew(RemoteSubStep.class)
+            .withArguments(channel, getPolarisCliResponseContent)
+            .thenReturn(remoteSubStep);
+
+        // test
+
+        assertEquals(remoteSubStep, "the object returned by code under test");
     }
 }

@@ -25,6 +25,7 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 import java.io.IOException;
 
 import com.synopsys.integration.function.ThrowingConsumer;
+import com.synopsys.integration.jenkins.JenkinsVersionHelper;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
@@ -56,6 +57,7 @@ public class PolarisWorkflowStepFactory {
     // These fields are lazily initialized; inside this class: use getOrCreate...() to get these values
     private IntEnvironmentVariables intEnvironmentVariables = null;
     private JenkinsIntLogger logger = null;
+    private JenkinsVersionHelper jenkinsVersionHelper = null;
 
 
     public PolarisWorkflowStepFactory(final String polarisCliName, final String polarisArguments, final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
@@ -71,7 +73,8 @@ public class PolarisWorkflowStepFactory {
     public CreatePolarisEnvironment createStepCreatePolarisEnvironment() throws IOException, InterruptedException {
         final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
         final JenkinsIntLogger logger = getOrCreateLogger();
-        return new CreatePolarisEnvironment(logger, intEnvironmentVariables);
+        final JenkinsVersionHelper jenkinsVersionHelper = getOrCreateJenkinsVersionHelper();
+        return new CreatePolarisEnvironment(logger, intEnvironmentVariables, jenkinsVersionHelper);
     }
 
     public RemoteSubStep<String> createStepFindPolarisCli() throws IOException, InterruptedException {
@@ -82,7 +85,7 @@ public class PolarisWorkflowStepFactory {
         polarisCli = polarisCli.forNode(node, listener);
 
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-        return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
+        return new RemoteSubStep<>(launcher.getChannel(), getPathToPolarisCli);
     }
 
     public ExecutePolarisCli createStepExecutePolarisCli() throws IOException, InterruptedException {
@@ -94,7 +97,7 @@ public class PolarisWorkflowStepFactory {
 
     public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
         final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
-        final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
+        final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = new RemoteSubStep<>(launcher.getChannel(), getPolarisCliResponseContent);
         return getPolarisCliResponseContentRemoteStep;
     }
 
@@ -130,5 +133,12 @@ public class PolarisWorkflowStepFactory {
             intEnvironmentVariables.putAll(envVars);
         }
         return intEnvironmentVariables;
+    }
+
+    private JenkinsVersionHelper getOrCreateJenkinsVersionHelper() {
+        if (jenkinsVersionHelper == null) {
+            jenkinsVersionHelper = new JenkinsVersionHelper();
+        }
+        return jenkinsVersionHelper;
     }
 }

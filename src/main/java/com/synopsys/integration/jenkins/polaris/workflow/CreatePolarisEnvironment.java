@@ -40,10 +40,12 @@ import jenkins.model.GlobalConfiguration;
 public class CreatePolarisEnvironment extends AbstractExecutingSubStep {
     private final JenkinsIntLogger logger;
     private final IntEnvironmentVariables intEnvironmentVariables;
+    private final JenkinsVersionHelper jenkinsVersionHelper;
 
-    public CreatePolarisEnvironment(final JenkinsIntLogger logger, final IntEnvironmentVariables intEnvironmentVariables) {
+    public CreatePolarisEnvironment(final JenkinsIntLogger logger, final IntEnvironmentVariables intEnvironmentVariables, final JenkinsVersionHelper jenkinsVersionHelper) {
         this.logger = logger;
         this.intEnvironmentVariables = intEnvironmentVariables;
+        this.jenkinsVersionHelper = jenkinsVersionHelper;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class CreatePolarisEnvironment extends AbstractExecutingSubStep {
             return SubStepResponse.FAILURE(new PolarisIntegrationException("There is a problem with your Polaris system configuration", ex));
         }
 
-        final String pluginVersion = JenkinsVersionHelper.getPluginVersion("synopsys-polaris");
+        final String pluginVersion = jenkinsVersionHelper.getPluginVersion("synopsys-polaris");
         logger.info("Running Synopsys Polaris for Jenkins version: " + pluginVersion);
 
         return SubStepResponse.SUCCESS();
