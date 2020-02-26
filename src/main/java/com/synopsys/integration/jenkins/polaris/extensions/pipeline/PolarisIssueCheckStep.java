@@ -31,7 +31,6 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
@@ -61,10 +60,6 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
     private Boolean returnIssueCount;
 
     @Nullable
-    @HelpMarkdown("Path to the cli-scan.json file. Defaults to $WORKSPACE/.synopsys/polaris/cli-scan.json if blank.")
-    private String pathToCliScanJson;
-
-    @Nullable
     @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete.")
     private Integer jobTimeoutInMinutes;
 
@@ -72,19 +67,6 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
     public PolarisIssueCheckStep() {
         // Nothing to do-- we generally want to only use DataBoundSetters if we can avoid it, but having no DataBoundConstructor can cause issues.
         // -- rotte FEB 2020
-    }
-
-    @Nullable
-    public String getPathToCliScanJson() {
-        if (StringUtils.isBlank(pathToCliScanJson)) {
-            return null;
-        }
-        return pathToCliScanJson;
-    }
-
-    @DataBoundSetter
-    public void setPathToCliScanJson(final String pathToCliScanJson) {
-        this.pathToCliScanJson = pathToCliScanJson;
     }
 
     @Nullable
@@ -161,7 +143,7 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
         @Override
         protected Integer run() throws Exception {
             final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(node, workspace, envVars, launcher, listener);
-            final PolarisIssueCheckStepWorkflow polarisIssueCheckStepWorkflow = new PolarisIssueCheckStepWorkflow(jobTimeoutInMinutes, returnIssueCount, pathToCliScanJson, polarisWorkflowStepFactory);
+            final PolarisIssueCheckStepWorkflow polarisIssueCheckStepWorkflow = new PolarisIssueCheckStepWorkflow(jobTimeoutInMinutes, returnIssueCount, polarisWorkflowStepFactory);
             return polarisIssueCheckStepWorkflow.perform();
         }
     }

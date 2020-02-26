@@ -24,10 +24,6 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
@@ -36,24 +32,16 @@ import jenkins.security.MasterToSlaveCallable;
 
 public class GetPolarisCliResponseContent extends MasterToSlaveCallable<String, PolarisIntegrationException> {
     private static final long serialVersionUID = -5698280934593066898L;
-    private final String pathToCliScanJson;
     private final String workspaceRemotePath;
 
-    public GetPolarisCliResponseContent(final String pathToCliScanJson, final String workspaceRemotePath) {
-        this.pathToCliScanJson = pathToCliScanJson;
+    public GetPolarisCliResponseContent(final String workspaceRemotePath) {
         this.workspaceRemotePath = workspaceRemotePath;
     }
 
     @Override
     public String call() throws PolarisIntegrationException {
         try {
-            final Path actualPathToJson;
-            if (StringUtils.isNotBlank(pathToCliScanJson)) {
-                actualPathToJson = Paths.get(pathToCliScanJson);
-            } else {
-                actualPathToJson = PolarisCliResponseUtility.getDefaultPathToJson(workspaceRemotePath);
-            }
-            return new String(Files.readAllBytes(actualPathToJson));
+            return new String(Files.readAllBytes(PolarisCliResponseUtility.getDefaultPathToJson(workspaceRemotePath)));
         } catch (final IOException e) {
             throw new PolarisIntegrationException("There was an error getting the Polaris CLI response.", e);
         }

@@ -87,8 +87,8 @@ public class PolarisWorkflowStepFactory {
         return new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
     }
 
-    public RemoteSubStep<String> createStepGetPolarisCliResponseContent(final String pathToCliScanJson) {
-        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(pathToCliScanJson, workspace.getRemote());
+    public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
+        final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
         return RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
     }
 

@@ -26,8 +26,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
@@ -66,7 +64,7 @@ public class PolarisBuildStepWorkflow {
                    .first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
                    .then(polarisWorkflowStepFactory.createStepFindPolarisCli(polarisCLiName))
                    .then(polarisWorkflowStepFactory.createStepExecutePolarisCli(polarisArguments))
-                   .andSometimes(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent(StringUtils.EMPTY))
+                   .andSometimes(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
                    .then(polarisWorkflowStepFactory.createStepGetTotalIssueCount(jobTimeoutInMinutes))
                    .then(polarisWorkflowStepFactory.createStepWithConsumer(issueCount -> setBuildStatusOnIssues(logger, issueCount, build)))
                    .butOnlyIf(waitForIssues, Objects::nonNull)

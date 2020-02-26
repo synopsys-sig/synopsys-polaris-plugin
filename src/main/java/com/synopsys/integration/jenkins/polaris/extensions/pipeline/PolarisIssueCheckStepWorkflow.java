@@ -31,19 +31,17 @@ import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 public class PolarisIssueCheckStepWorkflow {
     private final Integer jobTimeoutInMinutes;
     private final Boolean returnIssueCount;
-    private final String pathToCliScanJson;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
 
-    public PolarisIssueCheckStepWorkflow(final Integer jobTimeoutInMinutes, final Boolean returnIssueCount, final String pathToCliScanJson, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
+    public PolarisIssueCheckStepWorkflow(final Integer jobTimeoutInMinutes, final Boolean returnIssueCount, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
         this.jobTimeoutInMinutes = jobTimeoutInMinutes;
         this.returnIssueCount = returnIssueCount;
-        this.pathToCliScanJson = pathToCliScanJson;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
     }
 
     public Integer perform() throws Exception {
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
-        return StepWorkflow.first(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent(pathToCliScanJson))
+        return StepWorkflow.first(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
                    .then(polarisWorkflowStepFactory.createStepGetTotalIssueCount(jobTimeoutInMinutes))
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));
