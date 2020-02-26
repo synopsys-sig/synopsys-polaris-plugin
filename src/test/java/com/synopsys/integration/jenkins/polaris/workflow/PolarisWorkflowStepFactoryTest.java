@@ -102,8 +102,6 @@ public class PolarisWorkflowStepFactoryTest {
         Mockito.when(polarisServerConfigBuilder.getProperties()).thenReturn(builderProperties);
         final PolarisServerConfig polarisServerConfig = Mockito.mock(PolarisServerConfig.class);
         Mockito.when(polarisServerConfigBuilder.build()).thenReturn(polarisServerConfig);
-//        PowerMockito.mockStatic(JenkinsVersionHelper.class);
-//        Mockito.when(JenkinsVersionHelper.getPluginVersion("synopsys-polaris")).thenReturn("1.2.3");
 
         // Test factory-created object
         final SubStepResponse<Object> response =  createPolarisEnvironment.run();
@@ -143,6 +141,11 @@ public class PolarisWorkflowStepFactoryTest {
         final RemoteSubStep<String> createPolarisEnvironment = factory.createStepFindPolarisCli();
 
         assertEquals(remoteSubStep, createPolarisEnvironment);
+    }
+
+    @Test
+    public void testCreateStepExecutePolarisCli() {
+
     }
 
     private void youllNeedThisLater() throws Exception {
