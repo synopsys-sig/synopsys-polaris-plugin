@@ -70,6 +70,8 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
 
     @DataBoundConstructor
     public PolarisIssueCheckStep() {
+        // Nothing to do-- we generally want to only use DataBoundSetters if we can avoid it, but having no DataBoundConstructor can cause issues.
+        // -- rotte FEB 2020
     }
 
     @Nullable
