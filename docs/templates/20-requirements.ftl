@@ -1,6 +1,6 @@
 # Requirements
 
-Requirements for ${solution_name} are:
+The requirements for ${solution_name} are as follows:
 
 * Access to the internet
 * Jenkins version 2.60.1 or higher. Non-LTS versions of Jenkins are not supported.

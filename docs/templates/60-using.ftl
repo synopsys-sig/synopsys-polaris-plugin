@@ -10,7 +10,7 @@ To use ${solution_name} in a freestyle build, add it as a Build Step at the poin
 use the *If there are issues* field to select the action you want the plugin to take when issues are discovered. Click *Advanced...* if you want to adjust maximum
 length of time the job will wait for issues (*Job timeout in minutes*).
 If you want the build to proceed without waiting, leave the *Wait for Issues* box unchecked.
-1. Click Save.
+1. Click *Save*.
 
 ## Pipeline build
 
