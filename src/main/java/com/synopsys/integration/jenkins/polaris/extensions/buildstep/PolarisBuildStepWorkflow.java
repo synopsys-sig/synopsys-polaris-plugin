@@ -29,7 +29,6 @@ import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
-import com.synopsys.integration.stepworkflow.StepWorkflowBuilder;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
 import hudson.AbortException;
@@ -50,8 +49,7 @@ public class PolarisBuildStepWorkflow {
     public boolean perform() throws InterruptedException, IOException {
         validate(build);
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
-        final StepWorkflowBuilder<Object> stepWorkflowBuilder = polarisWorkflowStepFactory.createStepWorkflowBuilder(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment());
-        return stepWorkflowBuilder
+        return polarisWorkflowStepFactory.createStepWorkflowBuilder(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
                    .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
                    .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
                    .andSometimes(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())

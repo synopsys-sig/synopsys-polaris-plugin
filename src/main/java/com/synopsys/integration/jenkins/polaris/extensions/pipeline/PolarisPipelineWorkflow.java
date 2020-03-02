@@ -23,7 +23,6 @@
 package com.synopsys.integration.jenkins.polaris.extensions.pipeline;
 
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
-import com.synopsys.integration.stepworkflow.StepWorkflowBuilder;
 
 import hudson.AbortException;
 import hudson.FilePath;
@@ -42,9 +41,7 @@ public class PolarisPipelineWorkflow {
 
     public Integer perform() throws Exception {
         validate();
-        //final StepWorkflowBuilder<Object> stepWorkflowBuilder = new StepWorkflowBuilder<>(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment());
-        final StepWorkflowBuilder<Object> stepWorkflowBuilder = polarisWorkflowStepFactory.createStepWorkflowBuilder(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment());
-        return stepWorkflowBuilder
+        return polarisWorkflowStepFactory.createStepWorkflowBuilder(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
                    .then(polarisWorkflowStepFactory.createStepFindPolarisCli())
                    .then(polarisWorkflowStepFactory.createStepExecutePolarisCli())
                    .run()
