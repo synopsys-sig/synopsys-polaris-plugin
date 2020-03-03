@@ -87,11 +87,3 @@ dependencies {
     testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.2'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
 }
-
-
-task listrepos {
-    doLast {
-        println "Repositories:"
-        project.repositories.each { println "Name: " + it.name + "; url: " + it.url }
-   }
-}

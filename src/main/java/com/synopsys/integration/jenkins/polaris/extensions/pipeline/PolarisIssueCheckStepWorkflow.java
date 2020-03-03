@@ -25,7 +25,6 @@ package com.synopsys.integration.jenkins.polaris.extensions.pipeline;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
-import com.synopsys.integration.stepworkflow.StepWorkflowBuilder;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
 public class PolarisIssueCheckStepWorkflow {
@@ -41,7 +40,7 @@ public class PolarisIssueCheckStepWorkflow {
 
     public Integer perform() throws Exception {
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
-        return new StepWorkflowBuilder<>(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
+        return polarisWorkflowStepFactory.createStepWorkflowBuilder(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent())
                    .then(polarisWorkflowStepFactory.createStepGetTotalIssueCount(jobTimeoutInMinutes))
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));

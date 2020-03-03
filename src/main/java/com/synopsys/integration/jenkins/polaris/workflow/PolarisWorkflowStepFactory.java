@@ -93,8 +93,7 @@ public class PolarisWorkflowStepFactory {
 
     public RemoteSubStep<String> createStepGetPolarisCliResponseContent() {
         final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(workspace.getRemote());
-        final RemoteSubStep<String> getPolarisCliResponseContentRemoteStep = new RemoteSubStep<>(launcher.getChannel(), getPolarisCliResponseContent);
-        return getPolarisCliResponseContentRemoteStep;
+        return new RemoteSubStep<>(launcher.getChannel(), getPolarisCliResponseContent);
     }
 
     public GetTotalIssueCount createStepGetTotalIssueCount(final Integer jobTimeoutInMinutes) throws AbortException {
