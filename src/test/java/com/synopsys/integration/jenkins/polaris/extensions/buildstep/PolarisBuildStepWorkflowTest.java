@@ -28,6 +28,9 @@ import hudson.model.Node;
 @RunWith(PowerMockRunner.class)
 public class PolarisBuildStepWorkflowTest {
 
+    public static final String POLARIS_CLI_NAME = "testPolarisCliName";
+    public static final String POLARIS_ARGUMENTS = "test polaris arguments";
+
     // TODO move setup/mocking out of the test for readability
     @Test
     public void test() throws IOException, InterruptedException {
@@ -47,16 +50,15 @@ public class PolarisBuildStepWorkflowTest {
         final CreatePolarisEnvironment createPolarisEnvironment = Mockito.mock(CreatePolarisEnvironment.class);
         Mockito.when(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment()).thenReturn(createPolarisEnvironment);
         final ExecutePolarisCli executePolarisCli = Mockito.mock(ExecutePolarisCli.class);
-        Mockito.when(polarisWorkflowStepFactory.createStepExecutePolarisCli()).thenReturn(executePolarisCli);
+        Mockito.when(polarisWorkflowStepFactory.createStepExecutePolarisCli(POLARIS_ARGUMENTS)).thenReturn(executePolarisCli);
         final RemoteSubStep<String> findPolarisCli = Mockito.mock(RemoteSubStep.class);
-        Mockito.when(polarisWorkflowStepFactory.createStepFindPolarisCli()).thenReturn(findPolarisCli);
+        Mockito.when(polarisWorkflowStepFactory.createStepFindPolarisCli(POLARIS_CLI_NAME)).thenReturn(findPolarisCli);
         final RemoteSubStep<String> getPolarisCliResponseContent = Mockito.mock(RemoteSubStep.class);
         Mockito.when(polarisWorkflowStepFactory.createStepGetPolarisCliResponseContent()).thenReturn(getPolarisCliResponseContent);
         final GetTotalIssueCount getTotalIssueCount = Mockito.mock(GetTotalIssueCount.class);
-        Mockito.when(polarisWorkflowStepFactory.createStepGetTotalIssueCount()).thenReturn(getTotalIssueCount);
+        Mockito.when(polarisWorkflowStepFactory.createStepGetTotalIssueCount(0)).thenReturn(getTotalIssueCount);
         final SubStep<Integer, Object> responseHandler = Mockito.mock(SubStep.class);
         Mockito.when(polarisWorkflowStepFactory.createStepWithConsumer(Mockito.any(ThrowingConsumer.class))).thenReturn(responseHandler);
-
         final StepWorkflowBuilder workflowBuilder = Mockito.mock(StepWorkflowBuilder.class);
         Mockito.when(polarisWorkflowStepFactory.createStepWorkflowBuilder(createPolarisEnvironment)).thenReturn(workflowBuilder);
 
@@ -71,7 +73,7 @@ public class PolarisBuildStepWorkflowTest {
         Mockito.when(response.handleResponse(Mockito.any(ThrowingFunction.class))).thenReturn(Boolean.TRUE);
 
         // Test
-        final PolarisBuildStepWorkflow polarisBuildStepWorkflow = new PolarisBuildStepWorkflow(waitForIssues, polarisWorkflowStepFactory, build);
+        final PolarisBuildStepWorkflow polarisBuildStepWorkflow = new PolarisBuildStepWorkflow(POLARIS_CLI_NAME, POLARIS_ARGUMENTS, waitForIssues, polarisWorkflowStepFactory, build);
         polarisBuildStepWorkflow.perform();
 
         // Verify that the expected steps got added to workflow

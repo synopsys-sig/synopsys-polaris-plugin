@@ -5,7 +5,7 @@ buildscript {
         maven { url 'https://plugins.gradle.org/m2/' }
         maven { url 'https://sig-repo.synopsys.com/bds-integrations-release' }
     }
-    dependencies { classpath 'com.synopsys.integration:common-gradle-plugin:1.1.1' }
+    dependencies { classpath 'com.synopsys.integration:common-gradle-plugin:1.2.3' }
 }
 
 plugins {
@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '1.0.0-SNAPSHOT'
+version = '1.0.1-SNAPSHOT'
 description = 'Allows users to run Polaris static analysis in their builds'
 
 apply plugin: 'com.synopsys.integration.solution'
@@ -26,14 +26,15 @@ project.repositories.remove(mavenRepo)
 
 project.afterEvaluate {
     // MavenLocal is added by the gradle-jpi-plugin and the common-gradle-plugin so we have to remove it after the plugins are evaluated
-    /* List<String> repoNames = new ArrayList()
+    List<String> repoNames = new ArrayList()
     repoNames.addAll(project.repositories.getNames())
     for (String repoName : repoNames) {
         if (repoName.contains('MavenLocal')) {
             def repoToRemove = project.repositories.findByName(repoName)
-            project.repositories.remove(repoToRemove)
+	    // TODO restore this:
+            ///////////project.repositories.remove(repoToRemove)
         }
-    } */
+    }
 }
 
 repositories {
@@ -55,7 +56,7 @@ jenkinsPlugin {
     url = 'https://wiki.jenkins.io/display/JENKINS/Synopsys+Polaris+Plugin'
     gitHubUrl = 'https://github.com/jenkinsci/synopsys-polaris-plugin'
 
-    compatibleSinceVersion = '0.0.1'
+    compatibleSinceVersion = '1.0.0'
     pluginFirstClassLoader = false
 
     // As of 0.14.1 of polaris-common, methods we use to unpack the Polaris CLI utilize a version of commons-compress that is incompatible with version 2.197 of Jenkins and earlier.
@@ -68,7 +69,7 @@ dependencies {
     annotationProcessor 'com.synopsys.integration:jenkins-annotation-processor:0.0.1'
 
     implementation 'com.synopsys.integration:jenkins-common:0.1.6-SNAPSHOT'
-    implementation 'com.synopsys.integration:polaris-common:0.15.0-SNAPSHOT'
+    implementation 'com.synopsys.integration:polaris-common:0.15.0'
 
     // Must be compatible with the versions declared in Jenkins Common
     jenkinsPlugins 'org.jenkins-ci.plugins:credentials:2.1.10'
@@ -85,4 +86,12 @@ dependencies {
     testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.2'
     testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.2'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
+}
+
+
+task listrepos {
+    doLast {
+        println "Repositories:"
+        project.repositories.each { println "Name: " + it.name + "; url: " + it.url }
+   }
 }

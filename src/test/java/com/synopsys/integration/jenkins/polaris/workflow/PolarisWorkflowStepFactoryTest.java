@@ -79,7 +79,7 @@ public class PolarisWorkflowStepFactoryTest {
             .withNoArguments()
             .thenReturn(jenkinsVersionHelper);
 
-        factory = new PolarisWorkflowStepFactory(POLARIS_CLI_NAME, POLARIS_ARGUMENTS, node, workspace, envVars, launcher, listener);
+        factory = new PolarisWorkflowStepFactory(node, workspace, envVars, launcher, listener);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class PolarisWorkflowStepFactoryTest {
             .thenReturn(remoteSubStep);
 
         // Test factory method
-        final RemoteSubStep<String> createPolarisEnvironment = factory.createStepFindPolarisCli();
+        final RemoteSubStep<String> createPolarisEnvironment = factory.createStepFindPolarisCli(POLARIS_CLI_NAME);
 
         assertEquals(remoteSubStep, createPolarisEnvironment);
     }

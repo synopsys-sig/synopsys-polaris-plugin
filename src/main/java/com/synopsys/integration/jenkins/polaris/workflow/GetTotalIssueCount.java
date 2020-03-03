@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
-import com.synopsys.integration.polaris.common.api.PolarisComponent;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
@@ -42,6 +41,7 @@ import com.synopsys.integration.polaris.common.cli.model.PolarisCliResponseModel
 import com.synopsys.integration.polaris.common.cli.model.ScanInfo;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.polaris.common.request.PolarisRequestFactory;
+import com.synopsys.integration.polaris.common.service.JobService;
 import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
@@ -49,10 +49,14 @@ import com.synopsys.integration.stepworkflow.SubStepResponse;
 public class GetTotalIssueCount implements SubStep<String, Integer> {
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
+    private final JobService jobService;
+    private final Integer jobTimeoutInMinutes;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService, final int jobTimeoutInMinutes) {
         this.logger = logger;
         this.polarisService = polarisService;
+        this.jobService = jobService;
+        this.jobTimeoutInMinutes = jobTimeoutInMinutes;
     }
 
     @Override
@@ -75,7 +79,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         try {
             final String issueApiUrl = Optional.ofNullable(scanInfo)
                                            .map(ScanInfo::getIssueApiUrl)
-                                           .filter(StringUtils::isBlank)
+                                           .filter(StringUtils::isNotBlank)
                                            .orElseThrow(() -> new PolarisIntegrationException(
                                                "Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI."
                                            ));
@@ -92,18 +96,21 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                final PolarisComponent response = polarisService.get(PolarisComponent.class, PolarisRequestFactory.createDefaultBuilder().uri(jobStatusUrl).build());
-                // TODO: Check for job status
+                jobService.waitForJobToCompleteByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
-            final List<CountV0> countV0s = countV0Resources.getData();
-            return SubStepResponse.SUCCESS(countV0s.stream()
-                                               .map(CountV0::getAttributes)
-                                               .mapToInt(CountV0Attributes::getValue)
-                                               .sum());
+            final int totalIssues = countV0Resources.getData().stream()
+                                        .map(CountV0::getAttributes)
+                                        .mapToInt(CountV0Attributes::getValue)
+                                        .sum();
 
-        } catch (final IntegrationException e) {
+            return SubStepResponse.SUCCESS(totalIssues);
+
+        } catch (final InterruptedException | IntegrationException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             return SubStepResponse.FAILURE(e);
         }
     }

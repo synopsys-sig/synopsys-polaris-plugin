@@ -28,8 +28,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import com.synopsys.integration.jenkins.annotations.HelpMarkdown;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
@@ -49,32 +51,52 @@ import hudson.util.ListBoxModel;
 public class PolarisBuildStep extends Builder {
     public static final String DISPLAY_NAME = "Synopsys Polaris";
 
+    @Nullable
     @HelpMarkdown("The Polaris CLI installation to execute")
-    private final String polarisCliName;
+    private String polarisCliName;
 
+    @Nullable
     @HelpMarkdown("The command line arguments to pass to the Synopsys Polaris CLI")
-    private final String polarisArguments;
+    private String polarisArguments;
 
-    @HelpMarkdown("Check this box to wait for issues ")
-    private final WaitForIssues waitForIssues;
+    @Nullable
+    @HelpMarkdown("Check this box to wait for Polaris CLI jobs to complete and set the build status based on issues discovered")
+    private WaitForIssues waitForIssues;
 
     @DataBoundConstructor
-    public PolarisBuildStep(final String polarisCliName, final String polarisArguments, final WaitForIssues waitForIssues) {
-        this.polarisCliName = polarisCliName;
-        this.polarisArguments = polarisArguments;
-        this.waitForIssues = waitForIssues;
+    public PolarisBuildStep() {
+        // Nothing to do-- we generally want to only use DataBoundSetters if we can avoid it, but having no DataBoundConstructor can cause issues.
+        // -- rotte FEB 2020
     }
 
+    @Nullable
     public String getPolarisArguments() {
         return polarisArguments;
     }
 
+    @DataBoundSetter
+    public void setPolarisArguments(final String polarisArguments) {
+        this.polarisArguments = polarisArguments;
+    }
+
+    @Nullable
     public String getPolarisCliName() {
         return polarisCliName;
     }
 
+    @DataBoundSetter
+    public void setPolarisCliName(final String polarisCliName) {
+        this.polarisCliName = polarisCliName;
+    }
+
+    @Nullable
     public WaitForIssues getWaitForIssues() {
         return waitForIssues;
+    }
+
+    @DataBoundSetter
+    public void setWaitForIssues(final WaitForIssues waitForIssues) {
+        this.waitForIssues = waitForIssues;
     }
 
     @Override
@@ -89,8 +111,8 @@ public class PolarisBuildStep extends Builder {
 
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
-        final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(polarisCliName, polarisArguments, build.getBuiltOn(), build.getWorkspace(), build.getEnvironment(listener), launcher, listener);
-        final PolarisBuildStepWorkflow polarisBuildStepWorkflow = new PolarisBuildStepWorkflow(waitForIssues, polarisWorkflowStepFactory, build);
+        final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(build.getBuiltOn(), build.getWorkspace(), build.getEnvironment(listener), launcher, listener);
+        final PolarisBuildStepWorkflow polarisBuildStepWorkflow = new PolarisBuildStepWorkflow(polarisCliName, polarisArguments, waitForIssues, polarisWorkflowStepFactory, build);
         final boolean result = polarisBuildStepWorkflow.perform();
         return result;
     }

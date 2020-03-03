@@ -12,5 +12,10 @@
         <f:entry field="buildStatusForIssues" title="If there are issues">
             <f:select/>
         </f:entry>
+        <f:advanced>
+            <f:entry field="jobTimeoutInMinutes" title="Job timeout in minutes">
+                <f:textbox clazz="number" default="30" checkmethod="post"/>
+            </f:entry>
+        </f:advanced>
     </f:optionalBlock>
 </j:jelly>
