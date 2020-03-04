@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -33,6 +35,7 @@ import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import hudson.util.ArgumentListBuilder;
 import jenkins.model.GlobalConfiguration;
 
 // TODO The ability to test the factory is limited by the static methods it uses.
@@ -44,23 +47,25 @@ public class PolarisWorkflowStepFactoryTest {
 
     private static final String POLARIS_CLI_NAME = "testpolariscli";
     private static final String POLARIS_ARGUMENTS = "test polaris arguments";
-    public static final String POLARIS_CLI_HOME = "testhome";
+    public static final String POLARIS_CLI_HOME = "/polaris/cli/home";
     private static PolarisWorkflowStepFactory factory;
     private static ByteArrayOutputStream logOutputStream;
+    private static Map<String, String> testEnvVarsMap;
     private static EnvVars envVars;
     private static Node node;
     private static TaskListener listener;
     private static Launcher launcher;
     private static VirtualChannel channel;
     private static final String WORKSPACE_REMOTE = "test workspace remoate";
+    private static FilePath workspace;
 
     @BeforeClass
     public static void setup() throws Exception {
 
         node = Mockito.mock(Node.class);
-        final FilePath workspace = Mockito.mock(FilePath.class);
+        workspace = Mockito.mock(FilePath.class);
         Mockito.when(workspace.getRemote()).thenReturn(WORKSPACE_REMOTE);
-        final Map<String, String> testEnvVarsMap = new HashMap<>();
+        testEnvVarsMap = new HashMap<>();
         testEnvVarsMap.put("envvarkey", "env var value");
         envVars = new EnvVars(testEnvVarsMap);
         launcher = Mockito.mock(Launcher.class);
@@ -144,9 +149,65 @@ public class PolarisWorkflowStepFactoryTest {
     }
 
     @Test
-    public void testCreateStepExecutePolarisCli() {
+    public void testCreateStepExecutePolarisCli() throws IOException, InterruptedException {
 
+        // Test factory method
+        final ExecutePolarisCli executePolarisCli = factory.createStepExecutePolarisCli(POLARIS_ARGUMENTS);
+
+        final SubStepResponse<String> previousResponse = Mockito.mock(SubStepResponse.class);
+        Mockito.when(previousResponse.isFailure()).thenReturn(false);
+        Mockito.when(previousResponse.hasData()).thenReturn(true);
+        Mockito.when(previousResponse.getData()).thenReturn(POLARIS_CLI_HOME);
+
+        final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
+        argumentListBuilder.add(POLARIS_CLI_HOME);
+        argumentListBuilder.addTokenized(POLARIS_ARGUMENTS);
+
+        final Launcher.ProcStarter procStarter = Mockito.mock(Launcher.ProcStarter.class);
+        Mockito.when(launcher.launch()).thenReturn(procStarter);
+        Mockito.when(procStarter.cmds(Mockito.argThat(new ArgumentListBuilderMatcher(argumentListBuilder)))).thenReturn(procStarter);
+        Mockito.when(procStarter.envs(testEnvVarsMap)).thenReturn(procStarter);
+        Mockito.when(procStarter.pwd(workspace)).thenReturn(procStarter);
+        Mockito.when(procStarter.stdout(listener)).thenReturn(procStarter);
+        Mockito.when(procStarter.quiet(true)).thenReturn(procStarter);
+        Mockito.when(procStarter.join()).thenReturn(0);
+        final SubStepResponse<Integer> response = executePolarisCli.run(previousResponse);
+
+        assertTrue(response.isSuccess());
+        assertEquals(0L, (long) response.getData());
+
+        Mockito.verify(launcher).launch();
     }
+
+    @Test
+    public void testCreateStepGetPolarisCliResponseContent() {
+
+        // Test factory method
+        final RemoteSubStep<String> getPolarisCliResponseContent = factory.createStepGetPolarisCliResponseContent();
+
+        final SubStepResponse<?> previousResponse = Mockito.mock(SubStepResponse.class);
+        Mockito.when(previousResponse.isSuccess()).thenReturn(true);
+        Mockito.when(previousResponse.isFailure()).thenReturn(false);
+
+        final SubStepResponse<String> resp = getPolarisCliResponseContent.run(previousResponse);
+        assertTrue(resp.isSuccess());
+    }
+    // TODO There are a lot more methods to test
+    
+    private class ArgumentListBuilderMatcher implements ArgumentMatcher<ArgumentListBuilder> {
+        private final ArgumentListBuilder left;
+
+        public ArgumentListBuilderMatcher(final ArgumentListBuilder left) {
+            this.left = left;
+        }
+
+        @Override
+        public boolean matches(final ArgumentListBuilder right) {
+            return left.toList().equals(right.toList());
+        }
+    }
+
+
 
     private void youllNeedThisLater() throws Exception {
         // You'll need this code when testing createStepGetPolarisCliResponseContent
@@ -167,4 +228,6 @@ public class PolarisWorkflowStepFactoryTest {
 
         assertEquals(remoteSubStep, "the object returned by code under test");
     }
+
+
 }
