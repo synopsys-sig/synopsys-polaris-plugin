@@ -30,6 +30,7 @@ import com.synopsys.integration.jenkins.JenkinsVersionHelper;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
+import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
 import com.synopsys.integration.polaris.common.service.JobService;
 import com.synopsys.integration.polaris.common.service.PolarisService;
@@ -71,7 +72,8 @@ public class PolarisWorkflowStepFactory {
         final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
         final JenkinsIntLogger logger = getOrCreateLogger();
         final JenkinsVersionHelper jenkinsVersionHelper = getOrCreateJenkinsVersionHelper();
-        return new CreatePolarisEnvironment(logger, intEnvironmentVariables, jenkinsVersionHelper);
+        final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
+        return new CreatePolarisEnvironment(logger, polarisGlobalConfig, intEnvironmentVariables, jenkinsVersionHelper);
     }
 
     public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
@@ -105,7 +107,8 @@ public class PolarisWorkflowStepFactory {
         final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
         final JobService jobService = polarisServicesFactory.createJobService();
         final PolarisService polarisService = polarisServicesFactory.createPolarisService();
-        return new GetTotalIssueCount(logger, polarisService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
+        final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
+        return new GetTotalIssueCount(logger, polarisCliResponseUtility, polarisService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
     }
 
     public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {

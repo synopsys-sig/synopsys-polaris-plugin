@@ -35,22 +35,22 @@ import com.synopsys.integration.stepworkflow.AbstractExecutingSubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
-import jenkins.model.GlobalConfiguration;
-
 public class CreatePolarisEnvironment extends AbstractExecutingSubStep {
     private final JenkinsIntLogger logger;
+    private final PolarisGlobalConfig polarisGlobalConfig;
     private final IntEnvironmentVariables intEnvironmentVariables;
     private final JenkinsVersionHelper jenkinsVersionHelper;
 
-    public CreatePolarisEnvironment(final JenkinsIntLogger logger, final IntEnvironmentVariables intEnvironmentVariables, final JenkinsVersionHelper jenkinsVersionHelper) {
+    public CreatePolarisEnvironment(final JenkinsIntLogger logger, final PolarisGlobalConfig polarisGlobalConfig, final IntEnvironmentVariables intEnvironmentVariables, final JenkinsVersionHelper jenkinsVersionHelper) {
         this.logger = logger;
+        this.polarisGlobalConfig = polarisGlobalConfig;
         this.intEnvironmentVariables = intEnvironmentVariables;
         this.jenkinsVersionHelper = jenkinsVersionHelper;
     }
 
     @Override
     public SubStepResponse<Object> run() {
-        final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
+        // TODO Move null check to factory?
         if (polarisGlobalConfig == null) {
             return SubStepResponse.FAILURE(new PolarisIntegrationException("No Polaris system configuration could be found, please check your system configuration."));
         }

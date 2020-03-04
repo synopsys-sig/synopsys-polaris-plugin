@@ -47,13 +47,15 @@ import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 
 public class GetTotalIssueCount implements SubStep<String, Integer> {
+    private final PolarisCliResponseUtility polarisCliResponseUtility;
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
     private final JobService jobService;
     private final Integer jobTimeoutInMinutes;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService, final int jobTimeoutInMinutes) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisCliResponseUtility polarisCliResponseUtility, final PolarisService polarisService, final JobService jobService, final int jobTimeoutInMinutes) {
         this.logger = logger;
+        this.polarisCliResponseUtility = polarisCliResponseUtility;
         this.polarisService = polarisService;
         this.jobService = jobService;
         this.jobTimeoutInMinutes = jobTimeoutInMinutes;
@@ -64,8 +66,6 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         if (previousResponse.isFailure() || !previousResponse.hasData()) {
             return SubStepResponse.FAILURE(previousResponse);
         }
-
-        final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
         final String rawJson = previousResponse.getData();
         final PolarisCliResponseModel polarisCliResponseModel = polarisCliResponseUtility.getPolarisCliResponseModelFromString(rawJson);
         final IssueSummary issueSummary = polarisCliResponseModel.getIssueSummary();

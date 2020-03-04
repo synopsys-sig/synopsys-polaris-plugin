@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
@@ -28,6 +29,7 @@ import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
 
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.ExtensionList;
 import hudson.FilePath;
@@ -38,9 +40,10 @@ import hudson.remoting.VirtualChannel;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.GlobalConfiguration;
 
-// TODO The ability to test the factory is limited by the static methods it uses.
-// PowerMock's solution for static methods is pretty ugly.
-// Next step: reduce the use of static methods in the factory.
+// TODO Not clear writing tests for the factory is a good use of time.
+// Challenges to testing the factory: Because it's a factory, it's hard to verify what it does.
+// And the objects it creates are hard to interrogate.
+// Testing the run methods is much better done by unit tests, so it's kinda dumb.
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ GlobalConfiguration.class, PolarisCli.class, PolarisWorkflowStepFactory.class })
 public class PolarisWorkflowStepFactoryTest {
@@ -58,6 +61,7 @@ public class PolarisWorkflowStepFactoryTest {
     private static VirtualChannel channel;
     private static final String WORKSPACE_REMOTE = "test workspace remoate";
     private static FilePath workspace;
+    private static SubStepResponse<String> successfulResponseWithCliHome;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -85,8 +89,16 @@ public class PolarisWorkflowStepFactoryTest {
             .thenReturn(jenkinsVersionHelper);
 
         factory = new PolarisWorkflowStepFactory(node, workspace, envVars, launcher, listener);
+
+        successfulResponseWithCliHome = Mockito.mock(SubStepResponse.class);
+        Mockito.when(successfulResponseWithCliHome.isFailure()).thenReturn(false);
+        Mockito.when(successfulResponseWithCliHome.isSuccess()).thenReturn(true);
+        Mockito.when(successfulResponseWithCliHome.hasData()).thenReturn(true);
+        Mockito.when(successfulResponseWithCliHome.getData()).thenReturn(POLARIS_CLI_HOME);
     }
 
+    // TODO TEMP ignored
+    @Ignore
     @Test
     public void testCreateStepCreatePolarisEnvironment() throws Exception {
 
@@ -123,8 +135,8 @@ public class PolarisWorkflowStepFactoryTest {
 
         // TODO should some/all of this mocking be moved to setup()?
         // (Some of this may break the other test.)
-        final VirtualChannel channel = Mockito.mock(VirtualChannel.class);
-        Mockito.when(launcher.getChannel()).thenReturn(channel);
+//        final VirtualChannel channel = Mockito.mock(VirtualChannel.class);
+//        Mockito.when(launcher.getChannel()).thenReturn(channel);
         PowerMockito.mockStatic(PolarisCli.class);
         final PolarisCli polarisCli = Mockito.mock(PolarisCli.class);
         Mockito.when(PolarisCli.findInstanceWithName(POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
@@ -154,11 +166,6 @@ public class PolarisWorkflowStepFactoryTest {
         // Test factory method
         final ExecutePolarisCli executePolarisCli = factory.createStepExecutePolarisCli(POLARIS_ARGUMENTS);
 
-        final SubStepResponse<String> previousResponse = Mockito.mock(SubStepResponse.class);
-        Mockito.when(previousResponse.isFailure()).thenReturn(false);
-        Mockito.when(previousResponse.hasData()).thenReturn(true);
-        Mockito.when(previousResponse.getData()).thenReturn(POLARIS_CLI_HOME);
-
         final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
         argumentListBuilder.add(POLARIS_CLI_HOME);
         argumentListBuilder.addTokenized(POLARIS_ARGUMENTS);
@@ -171,7 +178,7 @@ public class PolarisWorkflowStepFactoryTest {
         Mockito.when(procStarter.stdout(listener)).thenReturn(procStarter);
         Mockito.when(procStarter.quiet(true)).thenReturn(procStarter);
         Mockito.when(procStarter.join()).thenReturn(0);
-        final SubStepResponse<Integer> response = executePolarisCli.run(previousResponse);
+        final SubStepResponse<Integer> response = executePolarisCli.run(successfulResponseWithCliHome);
 
         assertTrue(response.isSuccess());
         assertEquals(0L, (long) response.getData());
@@ -185,15 +192,25 @@ public class PolarisWorkflowStepFactoryTest {
         // Test factory method
         final RemoteSubStep<String> getPolarisCliResponseContent = factory.createStepGetPolarisCliResponseContent();
 
-        final SubStepResponse<?> previousResponse = Mockito.mock(SubStepResponse.class);
-        Mockito.when(previousResponse.isSuccess()).thenReturn(true);
-        Mockito.when(previousResponse.isFailure()).thenReturn(false);
-
-        final SubStepResponse<String> resp = getPolarisCliResponseContent.run(previousResponse);
+        final SubStepResponse<String> resp = getPolarisCliResponseContent.run(successfulResponseWithCliHome);
         assertTrue(resp.isSuccess());
     }
+
+    // TODO temp ignored
+    @Ignore
+    @Test
+    public void testCreateStepGetTotalIssueCount() throws AbortException {
+
+        // createStepGetTotalIssueCount
+        // Test factory method
+        final GetTotalIssueCount getTotalIssueCount = factory.createStepGetTotalIssueCount(0);
+
+        // Test the object created
+        getTotalIssueCount.run(successfulResponseWithCliHome);
+
+    }
     // TODO There are a lot more methods to test
-    
+
     private class ArgumentListBuilderMatcher implements ArgumentMatcher<ArgumentListBuilder> {
         private final ArgumentListBuilder left;
 
