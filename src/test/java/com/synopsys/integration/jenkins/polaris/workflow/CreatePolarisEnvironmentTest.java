@@ -23,10 +23,13 @@ import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
 public class CreatePolarisEnvironmentTest {
+    private static final String TEST_KEY = "TESTKEY";
+    private static final String TEST_VALUE = "testValue";
+    private static final String POLARIS_URL = "http://test.polaris.com";
+    private static final String POLARIS_ACCESS_TOKEN = "testAccessToken";
 
     @Test
     public void test() throws MalformedURLException {
-        // TODO extract constants
         final JenkinsIntLogger logger = Mockito.mock(JenkinsIntLogger.class);
         final IntEnvironmentVariables intEnvironmentVariables = Mockito.mock(IntEnvironmentVariables.class);
         final JenkinsVersionHelper jenkinsVersionHelper = Mockito.mock(JenkinsVersionHelper.class);
@@ -34,27 +37,25 @@ public class CreatePolarisEnvironmentTest {
         final PolarisServerConfigBuilder polarisServerConfigBuilder = Mockito.mock(PolarisServerConfigBuilder.class);
         Mockito.when(polarisGlobalConfig.getPolarisServerConfigBuilder()).thenReturn(polarisServerConfigBuilder);
         final Map<BuilderPropertyKey, String> props = new HashMap<>();
-        props.put(new BuilderPropertyKey("TESTKEY"), "testValue");
+        props.put(new BuilderPropertyKey(TEST_KEY), TEST_VALUE);
         Mockito.when(polarisServerConfigBuilder.getProperties()).thenReturn(props);
+        final URL polarisUrl = Mockito.mock(URL.class);
+        Mockito.when(polarisUrl.toString()).thenReturn(POLARIS_URL);
 
-        // TODO Best option I've found so far: create some real objects here; any way to reduce that?
-        final URL polarisUrl = new URL("http://test.polaris.com");
-        final AuthenticationSupport authenticationSupport = Mockito.mock(AuthenticationSupport.class);
-        final ProxyInfo proxyInfo = Mockito.mock(ProxyInfo.class);
-        final PolarisServerConfig polarisServerConfig = new PolarisServerConfig(polarisUrl, 0, "testAccessToken", proxyInfo, false, new Gson(), authenticationSupport);
-
+        // Creating a real PolarisServerConfig object simplifies verification of env variable setting
+        final PolarisServerConfig polarisServerConfig = new PolarisServerConfig(polarisUrl, 0, POLARIS_ACCESS_TOKEN, Mockito.mock(ProxyInfo.class), false,
+            Mockito.mock(Gson.class), Mockito.mock(AuthenticationSupport.class));
         Mockito.when(polarisServerConfigBuilder.build()).thenReturn(polarisServerConfig);
         Mockito.when(jenkinsVersionHelper.getPluginVersion("synopsys-polaris")).thenReturn("1.2.3");
 
+        // Test
         final CreatePolarisEnvironment createPolarisEnvironment = new CreatePolarisEnvironment(logger, polarisGlobalConfig, intEnvironmentVariables, jenkinsVersionHelper);
-
         final SubStepResponse<Object> response = createPolarisEnvironment.run();
 
+        // Verify
         assertTrue(response.isSuccess());
-
-        // verify: polarisServerConfig.populateEnvironmentVariables(...)
-        Mockito.verify(intEnvironmentVariables).put("TESTKEY", "testValue");
-        Mockito.verify(intEnvironmentVariables).put("POLARIS_SERVER_URL", "http://test.polaris.com");
-        Mockito.verify(intEnvironmentVariables).put("POLARIS_ACCESS_TOKEN", "testAccessToken");
+        Mockito.verify(intEnvironmentVariables).put(TEST_KEY, TEST_VALUE);
+        Mockito.verify(intEnvironmentVariables).put("POLARIS_SERVER_URL", POLARIS_URL);
+        Mockito.verify(intEnvironmentVariables).put("POLARIS_ACCESS_TOKEN", POLARIS_ACCESS_TOKEN);
     }
 }
