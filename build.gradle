@@ -31,14 +31,15 @@ project.afterEvaluate {
     for (String repoName : repoNames) {
         if (repoName.contains('MavenLocal')) {
             def repoToRemove = project.repositories.findByName(repoName)
-	    // TODO restore this:
-            ///////////project.repositories.remove(repoToRemove)
+            project.repositories.remove(repoToRemove)
         }
     }
 }
 
 repositories {
     maven { url 'https://sig-repo.synopsys.com/bds-integrations-release' }
+    // TODO TEMP:
+    maven { url 'https://sig-repo.synopsys.com/bds-integrations-snapshot' }
 }
 
 
