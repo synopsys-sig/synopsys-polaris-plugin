@@ -47,8 +47,6 @@ public class ExecutePolarisCliTest {
         final TaskListener listener = Mockito.mock(TaskListener.class);
         final String polarisArguments = POLARIS_ARGUMENTS;
 
-        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
-
         final SubStepResponse<String> previousResponse = Mockito.mock(SubStepResponse.class);
         Mockito.when(previousResponse.isFailure()).thenReturn(false);
         Mockito.when(previousResponse.hasData()).thenReturn(true);
@@ -68,6 +66,8 @@ public class ExecutePolarisCliTest {
         Mockito.when(procStarter.quiet(true)).thenReturn(procStarter);
         Mockito.when(procStarter.join()).thenReturn(Integer.valueOf(EXPECTED_RETURN_CODE));
 
+        // Test
+        final ExecutePolarisCli executePolarisCli = new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
         final SubStepResponse<Integer> response = executePolarisCli.run(previousResponse);
 
         final Integer actualReturnCode = response.getData();
