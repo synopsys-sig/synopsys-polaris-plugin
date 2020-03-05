@@ -1,1 +1,28 @@
-test cli-scan.json file contents
+{
+  "version": "1",
+  "scanInfo": {
+    "cliVersion": "1.5.5578",
+    "scanTime": "2020-03-05T20:18:01Z",
+    "issueApiUrl": "https://dev01.dev.polaris.synopsys.com/api/query/v0/roll-up-counts?branch-id=4a13ad30-b9d1-4f42-b348-fce51cecce6a&filter%5Bissue%5D%5Bstatus%5D%5B%24eq%5D=opened&for-child-paths=false&group-by=%5Bissue%5D%5Btaxonomy%5D%5Bid%5D%5Bd5ba96ff-c5c4-4f06-9915-27c7cf82b1cb%5D&include%5Bissue%5D%5B%5D=severity&page%5Blimit%5D=25&page%5Boffset%5D=0&project-id=50fe2ce5-4af8-4e17-9f16-3c7bbd6cf5d9"
+  },
+  "projectInfo": {
+    "projectId": "50fe2ce5-4af8-4e17-9f16-3c7bbd6cf5d9",
+    "branchId": "4a13ad30-b9d1-4f42-b348-fce51cecce6a",
+    "revisionId": "c47de0a5-b820-4fa4-9cb6-97ad7542a9ee"
+  },
+  "coverity": {
+    "toolVersion": "2019.12-2",
+    "jobId": "7vrq06up0t7012inb7afm55j7o",
+    "jobStatusUrl": "https://dev01.dev.polaris.synopsys.com/api/jobs/jobs/7vrq06up0t7012inb7afm55j7o",
+    "jobStatus": "COMPLETED"
+  },
+  "issueSummary": {
+    "issuesBySeverity": {
+      "high": 1,
+      "medium": 1,
+      "low": 5
+    },
+    "total": 7,
+    "summaryUrl": "https://dev01.dev.polaris.synopsys.com/projects/50fe2ce5-4af8-4e17-9f16-3c7bbd6cf5d9/branches/4a13ad30-b9d1-4f42-b348-fce51cecce6a"
+  }
+}

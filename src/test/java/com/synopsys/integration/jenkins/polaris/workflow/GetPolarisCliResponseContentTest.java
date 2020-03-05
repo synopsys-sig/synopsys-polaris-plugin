@@ -2,6 +2,10 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
@@ -9,14 +13,14 @@ import com.synopsys.integration.polaris.common.exception.PolarisIntegrationExcep
 public class GetPolarisCliResponseContentTest {
 
     public static final String WORKSPACE_RELPATH = "src/test/resources/workspace";
-    public static final String TEST_CLI_SCAN_JSON_FILE_CONTENTS = "test cli-scan.json file contents";
 
     @Test
-    public void test() throws PolarisIntegrationException {
+    public void test() throws PolarisIntegrationException, IOException {
+        final String jsonContent = FileUtils.readFileToString(new File("src/test/resources/workspace/.synopsys/polaris/cli-scan.json"));
 
         final GetPolarisCliResponseContent getPolarisCliResponseContent = new GetPolarisCliResponseContent(WORKSPACE_RELPATH);
         final String cliScanJsonFileContents = getPolarisCliResponseContent.call();
 
-        assertTrue(cliScanJsonFileContents.contains(TEST_CLI_SCAN_JSON_FILE_CONTENTS));
+        assertTrue(cliScanJsonFileContents.contains(jsonContent));
     }
 }

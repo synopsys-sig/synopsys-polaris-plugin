@@ -18,6 +18,7 @@ import com.synopsys.integration.util.OperatingSystemType;
 public class GetPathToPolarisCliTest {
 
     public static final String POLARIS_CLI_HOME_RELPATH = "src/test/resources/polarisCliHome";
+    public static final String POLARIS_EXE_RELPATH = POLARIS_CLI_HOME_RELPATH + "/bin/polaris";
 
     @Test
     public void test() throws IntegrationException {
@@ -28,6 +29,6 @@ public class GetPathToPolarisCliTest {
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(POLARIS_CLI_HOME_RELPATH);
         final String pathToPolarisCliExecutable = getPathToPolarisCli.call();
 
-        assertTrue(pathToPolarisCliExecutable.endsWith(POLARIS_CLI_HOME_RELPATH));
+        assertTrue(pathToPolarisCliExecutable.endsWith(POLARIS_EXE_RELPATH));
     }
 }
