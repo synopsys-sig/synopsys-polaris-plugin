@@ -1,11 +1,12 @@
 package com.synopsys.integration.jenkins.polaris.extensions.pipeline;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.util.Optional;
 
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
@@ -15,6 +16,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
+import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
+import com.synopsys.integration.stepworkflow.SubStep;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -22,17 +25,15 @@ import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
-import com.synopsys.integration.stepworkflow.SubStep;
-import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
-@PowerMockIgnore({"javax.crypto.*", "javax.net.ssl.*" })
+@PowerMockIgnore({ "javax.crypto.*", "javax.net.ssl.*" })
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({PolarisCli.class, StepWorkflow.class})
+@PrepareForTest({ PolarisCli.class, StepWorkflow.class })
 public class ExecutePolarisCliStepTest {
+    public static final String TEST_POLARIS_ARGS = "testArgs";
     private static final String WORKSPACE_REL_PATH = "out/test/PolarisBuildStepTest/testPerform/workspace";
     private static final String TEST_POLARIS_CLI_NAME = "testPolarisCliName";
     private static final String TEST_POLARIS_HOME = "/tmp/polaris";
-    public static final String TEST_POLARIS_ARGS = "testArgs";
 
     // TODO: To improve this test (to test more of ExecutePolarisCliStep.Execution.run(), we could refactor ExecutePolarisCliStep to:
     // - Separate object creation (CreatePolarisEnvironment, GetPathToPolarisCli, ExecutePolarisCli) out of ExecutePolarisCliStep,
