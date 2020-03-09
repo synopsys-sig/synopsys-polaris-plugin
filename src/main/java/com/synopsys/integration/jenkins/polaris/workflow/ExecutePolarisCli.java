@@ -22,16 +22,20 @@
  */
 package com.synopsys.integration.jenkins.polaris.workflow;
 
+import java.util.Arrays;
+
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
+import groovy.json.StringEscapeUtils;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import hudson.util.QuotedStringTokenizer;
 
 public class ExecutePolarisCli implements SubStep<String, Integer> {
     private final Launcher launcher;
@@ -59,18 +63,25 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
         final String pathToPolarisCli = previousResponse.getData();
 
         try {
-            final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
-            argumentListBuilder.add(pathToPolarisCli);
-            argumentListBuilder.addTokenized(polarisArguments);
+
+            // Based on hudson.Util::tokenize used by hudson.util.ArgumentListBuilder::addTokenized, but we need it to return quotes
+            final QuotedStringTokenizer quotedStringTokenizer = new QuotedStringTokenizer(polarisArguments, " \t\n\r\f", false, true);
+            final String[] tokenizedArguments = quotedStringTokenizer.toArray();
+
+            final ArgumentListBuilder argumentListBuilder = Arrays.stream(tokenizedArguments)
+                                                                .map(StringEscapeUtils::escapeJava)
+                                                                .collect(ArgumentListBuilder::new, ArgumentListBuilder::add, ArgumentListBuilder::add);
+            argumentListBuilder.prepend(pathToPolarisCli);
+
             logger.alwaysLog("Executing " + argumentListBuilder.toString());
 
-            final Integer exitCode = launcher.launch()
-                                         .cmds(argumentListBuilder)
-                                         .envs(intEnvironmentVariables.getVariables())
-                                         .pwd(workspace)
-                                         .stdout(listener)
-                                         .quiet(true)
-                                         .join();
+            final int exitCode = launcher.launch()
+                                     .cmds(argumentListBuilder)
+                                     .envs(intEnvironmentVariables.getVariables())
+                                     .pwd(workspace)
+                                     .stdout(listener)
+                                     .quiet(true)
+                                     .join();
 
             if (exitCode > 0) {
                 return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris failed with exit code: " + exitCode));
