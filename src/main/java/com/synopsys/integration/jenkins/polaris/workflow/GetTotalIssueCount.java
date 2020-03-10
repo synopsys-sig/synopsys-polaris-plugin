@@ -77,11 +77,15 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         }
 
         try {
+            if (jobTimeoutInMinutes < 0) {
+                throw new PolarisIntegrationException("[ERROR] Could not find total issue count-- job timeout must be a positive number if the Polaris CLI is being run without -w");
+            }
+
             final String issueApiUrl = Optional.ofNullable(scanInfo)
                                            .map(ScanInfo::getIssueApiUrl)
                                            .filter(StringUtils::isNotBlank)
                                            .orElseThrow(() -> new PolarisIntegrationException(
-                                               "Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI."
+                                               "[ERROR] Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI."
                                            ));
 
             logger.debug("Found issue api url, polling for issues");
@@ -96,7 +100,12 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                jobService.waitForJobToCompleteByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+                final boolean jobCompletedWithinTimeout = jobService.waitForJobToCompleteByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+                if (!jobCompletedWithinTimeout) {
+                    throw new PolarisIntegrationException(
+                        String.format("[ERROR] Issue count for most recent Polaris Analysis could not be determined: Job at url %s did not complete in the provided timeout of %s minutes.", jobStatusUrl, jobTimeoutInMinutes)
+                    );
+                }
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
