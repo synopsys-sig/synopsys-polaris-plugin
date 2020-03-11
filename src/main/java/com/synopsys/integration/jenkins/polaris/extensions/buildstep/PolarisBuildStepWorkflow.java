@@ -33,7 +33,6 @@ import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFact
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
-import hudson.AbortException;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 
@@ -54,7 +53,6 @@ public class PolarisBuildStepWorkflow {
     }
 
     public boolean perform() throws InterruptedException, IOException {
-        validate(build);
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
         final int jobTimeoutInMinutes = Optional.ofNullable(waitForIssues)
                                             .map(WaitForIssues::getJobTimeoutInMinutes)
@@ -70,15 +68,6 @@ public class PolarisBuildStepWorkflow {
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .run()
                    .handleResponse(response -> afterPerform(logger, response));
-    }
-
-    private void validate(final AbstractBuild<?, ?> build) throws AbortException {
-        if (build.getWorkspace() == null) {
-            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-        }
-        if (build.getBuiltOn() == null) {
-            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
-        }
     }
 
     private boolean afterPerform(final JenkinsIntLogger logger, final StepWorkflowResponse<Object> stepWorkflowResponse) {
@@ -102,7 +91,7 @@ public class PolarisBuildStepWorkflow {
 
     private void setBuildStatusOnIssues(final JenkinsIntLogger logger, final Integer issueCount, final AbstractBuild<?, ?> build) {
         final ChangeBuildStatusTo buildStatusToSet;
-        if (waitForIssues == null) {
+        if (waitForIssues == null || waitForIssues.getBuildStatusForIssues() == null) {
             buildStatusToSet = ChangeBuildStatusTo.SUCCESS;
         } else {
             buildStatusToSet = waitForIssues.getBuildStatusForIssues();
@@ -119,7 +108,7 @@ public class PolarisBuildStepWorkflow {
         }
     }
 
-    private void handleException(final JenkinsIntLogger logger, final AbstractBuild build, final Result result, final Exception e) {
+    private void handleException(final JenkinsIntLogger logger, final AbstractBuild<?, ?> build, final Result result, final Exception e) {
         logger.error("[ERROR] " + e.getMessage());
         logger.debug(e.getMessage(), e);
         build.setResult(result);

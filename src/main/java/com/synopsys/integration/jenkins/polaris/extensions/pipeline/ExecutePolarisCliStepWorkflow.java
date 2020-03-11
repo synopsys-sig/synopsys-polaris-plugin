@@ -25,27 +25,18 @@ package com.synopsys.integration.jenkins.polaris.extensions.pipeline;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 
-import hudson.AbortException;
-import hudson.FilePath;
-import hudson.model.Node;
-
 public class ExecutePolarisCliStepWorkflow {
     private final String polarisCliName;
     private final String polarisArguments;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
-    private final Node node;
-    private final FilePath workspace;
 
-    public ExecutePolarisCliStepWorkflow(final String polarisCliName, final String polarisArguments, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final Node node, final FilePath workspace) {
+    public ExecutePolarisCliStepWorkflow(final String polarisCliName, final String polarisArguments, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
         this.polarisCliName = polarisCliName;
         this.polarisArguments = polarisArguments;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
-        this.node = node;
-        this.workspace = workspace;
     }
 
     public Integer perform() throws Exception {
-        validate();
         return StepWorkflow.first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
                    .then(polarisWorkflowStepFactory.createStepFindPolarisCli(polarisCliName))
                    .then(polarisWorkflowStepFactory.createStepExecutePolarisCli(polarisArguments))
@@ -53,12 +44,4 @@ public class ExecutePolarisCliStepWorkflow {
                    .getDataOrThrowException();
     }
 
-    private void validate() throws AbortException {
-        if (node == null) {
-            throw new AbortException("Polaris cannot be executed: The node that it was executed on no longer exists.");
-        }
-        if (workspace == null) {
-            throw new AbortException("Polaris cannot be executed: The workspace could not be determined.");
-        }
-    }
 }
