@@ -149,7 +149,7 @@ public class ExecutePolarisCliStep extends Step implements Serializable {
         @Override
         protected Integer run() throws Exception {
             final PolarisWorkflowStepFactory polarisWorkflowStepFactory = new PolarisWorkflowStepFactory(node, workspace, envVars, launcher, listener);
-            final ExecutePolarisCliStepWorkflow executePolarisCliStepWorkflow = new ExecutePolarisCliStepWorkflow(polarisCli, arguments, polarisWorkflowStepFactory, node, workspace);
+            final ExecutePolarisCliStepWorkflow executePolarisCliStepWorkflow = new ExecutePolarisCliStepWorkflow(polarisCli, arguments, polarisWorkflowStepFactory);
             return executePolarisCliStepWorkflow.perform();
         }
     }
