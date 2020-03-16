@@ -43,6 +43,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
+import hudson.tools.ToolInstallation;
 import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
@@ -71,9 +72,14 @@ public class PolarisWorkflowStepFactory {
     }
 
     public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
+        Optional.ofNullable(ToolInstallation.all().get(PolarisCli.DescriptorImpl.class))
+            .map(PolarisCli.DescriptorImpl::getInstallations)
+            .orElseThrow(() -> new AbortException("Polaris cannot be executed: No Polaris CLI installations could be found in the Global Tool Configuration. Please configure a Polaris CLI installation."));
+
         PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
-                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
+                                        String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)));
+
         polarisCli = polarisCli.forEnvironment(envVars);
         polarisCli = polarisCli.forNode(node, listener);
 
