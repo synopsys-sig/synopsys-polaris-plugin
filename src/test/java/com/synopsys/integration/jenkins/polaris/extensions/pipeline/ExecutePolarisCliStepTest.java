@@ -19,12 +19,15 @@ import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import com.synopsys.integration.stepworkflow.SubStep;
 
+import hudson.DescriptorExtensionList;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import hudson.tools.ToolDescriptor;
+import hudson.tools.ToolInstallation;
 
 @PowerMockIgnore({ "javax.crypto.*", "javax.net.ssl.*" })
 @RunWith(PowerMockRunner.class)
@@ -63,7 +66,13 @@ public class ExecutePolarisCliStepTest {
         final ExecutePolarisCliStep.Execution stepExecution = (ExecutePolarisCliStep.Execution) executePolarisCliStep.start(stepContext);
 
         final PolarisCli polarisCli = PowerMockito.mock(PolarisCli.class);
+        final DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> allDescriptors = Mockito.mock(DescriptorExtensionList.class);
+        final PolarisCli.DescriptorImpl polarisCliDescriptor = Mockito.mock(PolarisCli.DescriptorImpl.class);
+        PowerMockito.mockStatic(ToolInstallation.class);
         PowerMockito.mockStatic(PolarisCli.class);
+        Mockito.when(ToolInstallation.all()).thenReturn(allDescriptors);
+        Mockito.when(allDescriptors.get(PolarisCli.DescriptorImpl.class)).thenReturn(polarisCliDescriptor);
+        Mockito.when(polarisCliDescriptor.getInstallations()).thenReturn(new PolarisCli[] { polarisCli });
         Mockito.when(PolarisCli.findInstanceWithName(TEST_POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
 
         Mockito.when(polarisCli.forEnvironment(envVars)).thenReturn(polarisCli);
