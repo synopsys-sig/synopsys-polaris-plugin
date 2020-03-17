@@ -83,6 +83,12 @@ public class PolarisWorkflowStepFactory {
         polarisCli = polarisCli.forEnvironment(envVars);
         polarisCli = polarisCli.forNode(node, listener);
 
+        if (polarisCli.getHome() == null) {
+            throw new AbortException(String.format(
+                "Polaris cannot be executed: The Polaris CLI installation home could not be determined for installation %s. Please ensure that this installation is correctly configured in the Global Tool Configuration."
+                , polarisCliName));
+        }
+
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
         return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
     }
