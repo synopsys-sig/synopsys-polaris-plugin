@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.polaris.common.PolarisCliResponseVersion;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
 import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
@@ -47,6 +48,7 @@ import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 
 public class GetTotalIssueCount implements SubStep<String, Integer> {
+    public static final Integer SUPPORTED_POLARIS_CLI_RESPONSE_MAJOR_VERSION = 1;
     private final JenkinsIntLogger logger;
     private final PolarisService polarisService;
     private final JobService jobService;
@@ -68,17 +70,28 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
         final PolarisCliResponseUtility polarisCliResponseUtility = PolarisCliResponseUtility.defaultUtility(logger);
         final String rawJson = previousResponse.getData();
         final PolarisCliResponseModel polarisCliResponseModel = polarisCliResponseUtility.getPolarisCliResponseModelFromString(rawJson);
-        final IssueSummary issueSummary = polarisCliResponseModel.getIssueSummary();
-        final ScanInfo scanInfo = polarisCliResponseModel.getScanInfo();
-
-        if (issueSummary != null) {
-            logger.debug("Found total issue count, scan must have been run with -w");
-            return SubStepResponse.SUCCESS(issueSummary.getTotalIssueCount());
-        }
 
         try {
+            PolarisCliResponseVersion.parse(polarisCliResponseModel.getVersion())
+                .filter(version -> SUPPORTED_POLARIS_CLI_RESPONSE_MAJOR_VERSION.equals(version.getMajor()))
+                .orElseThrow(
+                    () -> new PolarisIntegrationException(
+                        "[ERROR] Issue count for most recent Polaris Analysis could not be determined: Invalid or incompatible version of cli-scan.json. "
+                            + "This version of Synopsys Polaris for Jenkins supports all versions with major version "
+                            + SUPPORTED_POLARIS_CLI_RESPONSE_MAJOR_VERSION
+                    )
+                );
+
+            final IssueSummary issueSummary = polarisCliResponseModel.getIssueSummary();
+            final ScanInfo scanInfo = polarisCliResponseModel.getScanInfo();
+
+            if (issueSummary != null) {
+                logger.debug("Found total issue count in cli-scan.json, scan must have been run with -w");
+                return SubStepResponse.SUCCESS(issueSummary.getTotalIssueCount());
+            }
+
             if (jobTimeoutInMinutes < 0) {
-                throw new PolarisIntegrationException("[ERROR] Could not find total issue count-- job timeout must be a positive number if the Polaris CLI is being run without -w");
+                throw new PolarisIntegrationException("[ERROR] Issue count for most recent Polaris Analysis could not be determined: job timeout must be a positive number if the Polaris CLI is being run without -w");
             }
 
             final String issueApiUrl = Optional.ofNullable(scanInfo)
@@ -88,7 +101,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                                                "[ERROR] Synopsys Polaris for Jenkins cannot find the total issue count or issue api url in the cli-scan.json. Please ensure that you are using a supported version of the Polaris CLI."
                                            ));
 
-            logger.debug("Found issue api url, polling for issues");
+            logger.debug("Found issue api url, polling for job status");
             final List<String> jobStatusUrls = new ArrayList<>();
 
             Optional.ofNullable(polarisCliResponseModel.getBlackDuckScaToolInfo())
