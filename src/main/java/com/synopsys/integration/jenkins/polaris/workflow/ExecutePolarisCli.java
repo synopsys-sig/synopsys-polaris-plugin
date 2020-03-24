@@ -24,18 +24,19 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.util.Arrays;
 
+import org.apache.commons.lang.text.StrMatcher;
+import org.apache.commons.lang.text.StrTokenizer;
+
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 import com.synopsys.integration.util.IntEnvironmentVariables;
 
-import groovy.json.StringEscapeUtils;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
-import hudson.util.QuotedStringTokenizer;
 
 public class ExecutePolarisCli implements SubStep<String, Integer> {
     private final Launcher launcher;
@@ -63,14 +64,11 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
         final String pathToPolarisCli = previousResponse.getData();
 
         try {
-
-            // Based on hudson.Util::tokenize used by hudson.util.ArgumentListBuilder::addTokenized, but we need it to return quotes
-            final QuotedStringTokenizer quotedStringTokenizer = new QuotedStringTokenizer(polarisArguments, " \t\n\r\f", false, true);
-            final String[] tokenizedArguments = quotedStringTokenizer.toArray();
-
-            final ArgumentListBuilder argumentListBuilder = Arrays.stream(tokenizedArguments)
-                                                                .map(StringEscapeUtils::escapeJava)
+            final StrTokenizer strTokenizer = new StrTokenizer(polarisArguments);
+            strTokenizer.setQuoteMatcher(StrMatcher.singleQuoteMatcher());
+            final ArgumentListBuilder argumentListBuilder = Arrays.stream(strTokenizer.getTokenArray())
                                                                 .collect(ArgumentListBuilder::new, ArgumentListBuilder::add, ArgumentListBuilder::add);
+
             argumentListBuilder.prepend(pathToPolarisCli);
 
             logger.alwaysLog("Executing " + argumentListBuilder.toString());
@@ -80,7 +78,6 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
                                      .envs(intEnvironmentVariables.getVariables())
                                      .pwd(workspace)
                                      .stdout(listener)
-                                     .quiet(true)
                                      .join();
 
             if (exitCode > 0) {
