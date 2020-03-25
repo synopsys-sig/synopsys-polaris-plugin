@@ -22,11 +22,6 @@
  */
 package com.synopsys.integration.jenkins.polaris.workflow;
 
-import java.util.Arrays;
-
-import org.apache.commons.lang.text.StrMatcher;
-import org.apache.commons.lang.text.StrTokenizer;
-
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
 import com.synopsys.integration.stepworkflow.SubStep;
@@ -35,6 +30,7 @@ import com.synopsys.integration.util.IntEnvironmentVariables;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 
@@ -64,11 +60,20 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
         final String pathToPolarisCli = previousResponse.getData();
 
         try {
-            final StrTokenizer strTokenizer = new StrTokenizer(polarisArguments);
-            strTokenizer.setQuoteMatcher(StrMatcher.singleQuoteMatcher());
-            final ArgumentListBuilder argumentListBuilder = Arrays.stream(strTokenizer.getTokenArray())
-                                                                .collect(ArgumentListBuilder::new, ArgumentListBuilder::add, ArgumentListBuilder::add);
-
+            final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
+            if (launcher.isUnix()) {
+                argumentListBuilder.addTokenized(polarisArguments);
+            } else {
+                boolean isJson = false;
+                for (final String argument : Util.tokenize(polarisArguments)) {
+                    if (isJson) {
+                        argumentListBuilder.add(argument.replace("\"", "\\\""));
+                    } else {
+                        argumentListBuilder.add(argument);
+                    }
+                    isJson = "--co".equals(argument);
+                }
+            }
             argumentListBuilder.prepend(pathToPolarisCli);
 
             logger.alwaysLog("Executing " + argumentListBuilder.toString());
