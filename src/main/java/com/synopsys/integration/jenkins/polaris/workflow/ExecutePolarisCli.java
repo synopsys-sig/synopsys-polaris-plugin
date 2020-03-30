@@ -83,6 +83,7 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
                                      .envs(intEnvironmentVariables.getVariables())
                                      .pwd(workspace)
                                      .stdout(listener)
+                                     .quiet(true)
                                      .join();
 
             if (exitCode > 0) {

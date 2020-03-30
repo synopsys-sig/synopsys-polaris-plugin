@@ -24,6 +24,7 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -114,19 +115,15 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                final boolean jobCompletedWithinTimeout = jobService.waitForJobToCompleteByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
-                if (!jobCompletedWithinTimeout) {
-                    throw new PolarisIntegrationException(
-                        String.format("Issue count for most recent Polaris Analysis could not be determined: Job at url %s did not complete in the provided timeout of %s minutes.", jobStatusUrl, jobTimeoutInMinutes)
-                    );
-                }
+                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl);
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
-            final int totalIssues = countV0Resources.getData().stream()
-                                        .map(CountV0::getAttributes)
-                                        .mapToInt(CountV0Attributes::getValue)
-                                        .sum();
+            final Integer totalIssues = countV0Resources.getData().stream()
+                                            .map(CountV0::getAttributes)
+                                            .map(CountV0Attributes::getValue)
+                                            .filter(Objects::nonNull)
+                                            .reduce(0, Integer::sum);
 
             return SubStepResponse.SUCCESS(totalIssues);
 
