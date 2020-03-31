@@ -25,8 +25,6 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import com.synopsys.integration.function.ThrowingConsumer;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
@@ -45,7 +43,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
-import hudson.tools.ToolInstallation;
 import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
@@ -74,15 +71,11 @@ public class PolarisWorkflowStepFactory {
     }
 
     public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
-        final boolean installationsExist = Optional.ofNullable(ToolInstallation.all().get(PolarisCli.DescriptorImpl.class))
-                                               .map(PolarisCli.DescriptorImpl::getInstallations)
-                                               .filter(ArrayUtils::isNotEmpty)
-                                               .isPresent();
-        if (!installationsExist) {
+        if (!PolarisCli.installationsExist()) {
             throw new AbortException("Polaris cannot be executed: No Polaris CLI installations could be found in the Global Tool Configuration. Please configure a Polaris CLI installation.");
         }
 
-        PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
+        PolarisCli polarisCli = PolarisCli.findInstallationWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
                                         String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)));
 

@@ -97,7 +97,8 @@ public class PolarisBuildStepTest {
         Mockito.when(polarisCli.forNode(Mockito.any(Node.class), Mockito.any(TaskListener.class))).thenReturn(polarisCli);
 
         PowerMockito.mockStatic(PolarisCli.class);
-        Mockito.when(PolarisCli.findInstanceWithName("testPolarisCliName")).thenReturn(Optional.of(polarisCli));
+        Mockito.when(PolarisCli.findInstallationWithName("testPolarisCliName")).thenReturn(Optional.of(polarisCli));
+        Mockito.when(PolarisCli.installationsExist()).thenReturn(true);
 
         final PolarisGlobalConfig polarisGlobalConfig = Mockito.mock(PolarisGlobalConfig.class);
         final ExtensionList extensionList = Mockito.mock(ExtensionList.class);
