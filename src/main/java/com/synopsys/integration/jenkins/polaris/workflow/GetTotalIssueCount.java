@@ -115,7 +115,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 .ifPresent(jobStatusUrls::add);
 
             for (final String jobStatusUrl : jobStatusUrls) {
-                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl);
+                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
             }
 
             final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
