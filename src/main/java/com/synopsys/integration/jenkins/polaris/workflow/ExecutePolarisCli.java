@@ -30,6 +30,7 @@ import com.synopsys.integration.util.IntEnvironmentVariables;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 
@@ -60,17 +61,30 @@ public class ExecutePolarisCli implements SubStep<String, Integer> {
 
         try {
             final ArgumentListBuilder argumentListBuilder = new ArgumentListBuilder();
-            argumentListBuilder.add(pathToPolarisCli);
-            argumentListBuilder.addTokenized(polarisArguments);
+            if (launcher.isUnix()) {
+                argumentListBuilder.addTokenized(polarisArguments);
+            } else {
+                boolean isJson = false;
+                for (final String argument : Util.tokenize(polarisArguments)) {
+                    if (isJson) {
+                        argumentListBuilder.add(argument.replace("\"", "\\\""));
+                    } else {
+                        argumentListBuilder.add(argument);
+                    }
+                    isJson = "--co".equals(argument);
+                }
+            }
+            argumentListBuilder.prepend(pathToPolarisCli);
+
             logger.alwaysLog("Executing " + argumentListBuilder.toString());
 
-            final Integer exitCode = launcher.launch()
-                                         .cmds(argumentListBuilder)
-                                         .envs(intEnvironmentVariables.getVariables())
-                                         .pwd(workspace)
-                                         .stdout(listener)
-                                         .quiet(true)
-                                         .join();
+            final int exitCode = launcher.launch()
+                                     .cmds(argumentListBuilder)
+                                     .envs(intEnvironmentVariables.getVariables())
+                                     .pwd(workspace)
+                                     .stdout(listener)
+                                     .quiet(true)
+                                     .join();
 
             if (exitCode > 0) {
                 return SubStepResponse.FAILURE(new PolarisIntegrationException("Polaris failed with exit code: " + exitCode));

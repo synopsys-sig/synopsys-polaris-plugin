@@ -25,6 +25,8 @@ package com.synopsys.integration.jenkins.polaris.workflow;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.synopsys.integration.function.ThrowingConsumer;
 import com.synopsys.integration.jenkins.JenkinsVersionHelper;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
@@ -46,6 +48,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
+import hudson.tools.ToolInstallation;
 import jenkins.model.GlobalConfiguration;
 
 public class PolarisWorkflowStepFactory {
@@ -77,11 +80,26 @@ public class PolarisWorkflowStepFactory {
     }
 
     public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
+        final boolean installationsExist = Optional.ofNullable(ToolInstallation.all().get(PolarisCli.DescriptorImpl.class))
+                                               .map(PolarisCli.DescriptorImpl::getInstallations)
+                                               .filter(ArrayUtils::isNotEmpty)
+                                               .isPresent();
+        if (!installationsExist) {
+            throw new AbortException("Polaris cannot be executed: No Polaris CLI installations could be found in the Global Tool Configuration. Please configure a Polaris CLI installation.");
+        }
+
         PolarisCli polarisCli = PolarisCli.findInstanceWithName(polarisCliName)
                                     .orElseThrow(() -> new AbortException(
-                                        "Polaris cannot be executed: No Polaris CLI installations found. Please configure a Polaris CLI installation in the system tool configuration."));
+                                        String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)));
+
         polarisCli = polarisCli.forEnvironment(envVars);
         polarisCli = polarisCli.forNode(node, listener);
+
+        if (polarisCli.getHome() == null) {
+            throw new AbortException(String.format(
+                "Polaris cannot be executed: The Polaris CLI installation home could not be determined for installation %s. Please ensure that this installation is correctly configured in the Global Tool Configuration."
+                , polarisCliName));
+        }
 
         final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
         return new RemoteSubStep<>(launcher.getChannel(), getPathToPolarisCli);

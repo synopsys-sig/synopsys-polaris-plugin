@@ -87,7 +87,8 @@ public class GetTotalIssueCountTest {
         final BlackDuckScaToolInfo blackDuckScaToolInfo = Mockito.mock(BlackDuckScaToolInfo.class);
         Mockito.when(polarisCliResponseModel.getBlackDuckScaToolInfo()).thenReturn(blackDuckScaToolInfo);
         Mockito.when(blackDuckScaToolInfo.getJobStatusUrl()).thenReturn(JOB_STATUS_URL);
-        Mockito.when(jobService.waitForJobToCompleteByUrl(JOB_STATUS_URL, JOB_TIMEOUT_IN_MINUTES, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS)).thenReturn(Boolean.TRUE);
+
+        //////////// TODO: Mockito.when(jobService.waitForJobToCompleteByUrl(JOB_STATUS_URL, JOB_TIMEOUT_IN_MINUTES, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS)).thenReturn(Boolean.TRUE);
         final CountV0Resources countV0Resources = Mockito.mock(CountV0Resources.class);
 
         // TODO should this be more specific about the request?

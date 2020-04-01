@@ -42,7 +42,7 @@ public class WaitForIssues extends AbstractDescribableImpl<WaitForIssues> {
     private ChangeBuildStatusTo buildStatusForIssues;
 
     @Nullable
-    @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete.")
+    @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete when the Polaris CLI is executed without -w (nonblocking mode). Defaults to 30 minutes if blank.")
     private Integer jobTimeoutInMinutes;
 
     @DataBoundConstructor

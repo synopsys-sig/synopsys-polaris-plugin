@@ -60,6 +60,9 @@ jenkinsPlugin {
     compatibleSinceVersion = '1.0.0'
     pluginFirstClassLoader = false
 
+    // "maskClasses" masks classes from the above specified coreVersion of Jenkins, not whatever the runtime Jenkins is. If the above version uses commons-compress 1.10 and runtime uses 1.18,
+    // masking commons-compress here will have no effect.
+    // -rotte MAR 2020
     // As of 0.14.1 of polaris-common, methods we use to unpack the Polaris CLI utilize a version of commons-compress that is incompatible with version 2.197 of Jenkins and earlier.
     // Once we no longer depend on commons compress, no longer use those methods, or we update our minimum supported version past 2.197, we should unmask those classes.
     // -rotte FEB 2020
@@ -70,7 +73,7 @@ dependencies {
     annotationProcessor 'com.synopsys.integration:jenkins-annotation-processor:0.0.1'
 
     implementation 'com.synopsys.integration:jenkins-common:0.2.0-SNAPSHOT'
-    implementation 'com.synopsys.integration:polaris-common:0.15.0'
+    implementation 'com.synopsys.integration:polaris-common:0.17.0'
 
     // Must be compatible with the versions declared in Jenkins Common
     jenkinsPlugins 'org.jenkins-ci.plugins:credentials:2.1.10'
