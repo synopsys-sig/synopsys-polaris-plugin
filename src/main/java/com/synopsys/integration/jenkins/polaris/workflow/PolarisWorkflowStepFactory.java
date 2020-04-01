@@ -30,8 +30,8 @@ import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
 import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
 import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
+import com.synopsys.integration.polaris.common.service.CountService;
 import com.synopsys.integration.polaris.common.service.JobService;
-import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.jenkins.RemoteSubStep;
@@ -111,8 +111,8 @@ public class PolarisWorkflowStepFactory {
         final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
         final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
         final JobService jobService = polarisServicesFactory.createJobService();
-        final PolarisService polarisService = polarisServicesFactory.createPolarisService();
-        return new GetTotalIssueCount(logger, polarisService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
+        final CountService countService = polarisServicesFactory.createCountService();
+        return new GetTotalIssueCount(logger, countService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
     }
 
     public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {

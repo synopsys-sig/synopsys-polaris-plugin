@@ -22,38 +22,33 @@
  */
 package com.synopsys.integration.jenkins.polaris.workflow;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
-import com.synopsys.integration.polaris.common.api.query.model.CountV0;
-import com.synopsys.integration.polaris.common.api.query.model.CountV0Attributes;
-import com.synopsys.integration.polaris.common.api.query.model.CountV0Resources;
 import com.synopsys.integration.polaris.common.cli.PolarisCliResponseUtility;
 import com.synopsys.integration.polaris.common.cli.model.CliCommonResponseModel;
 import com.synopsys.integration.polaris.common.cli.model.CommonIssueSummary;
 import com.synopsys.integration.polaris.common.cli.model.CommonScanInfo;
 import com.synopsys.integration.polaris.common.cli.model.CommonToolInfo;
 import com.synopsys.integration.polaris.common.exception.PolarisIntegrationException;
-import com.synopsys.integration.polaris.common.request.PolarisRequestFactory;
+import com.synopsys.integration.polaris.common.service.CountService;
 import com.synopsys.integration.polaris.common.service.JobService;
-import com.synopsys.integration.polaris.common.service.PolarisService;
 import com.synopsys.integration.stepworkflow.SubStep;
 import com.synopsys.integration.stepworkflow.SubStepResponse;
 
 public class GetTotalIssueCount implements SubStep<String, Integer> {
     public static final String STEP_EXCEPTION_PREFIX = "Issue count for most recent Polaris Analysis could not be determined: ";
     private final JenkinsIntLogger logger;
-    private final PolarisService polarisService;
+    private final CountService countService;
     private final JobService jobService;
     private final Integer jobTimeoutInMinutes;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final PolarisService polarisService, final JobService jobService, final int jobTimeoutInMinutes) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final CountService countService, final JobService jobService, final int jobTimeoutInMinutes) {
         this.logger = logger;
-        this.polarisService = polarisService;
+        this.countService = countService;
         this.jobService = jobService;
         this.jobTimeoutInMinutes = jobTimeoutInMinutes;
     }
@@ -95,15 +90,10 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 if (jobStatusUrl == null) {
                     throw new PolarisIntegrationException(STEP_EXCEPTION_PREFIX + "tool with name " + tool.getToolName() + " has no jobStatusUrl");
                 }
-                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl);
+                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
             }
 
-            final CountV0Resources countV0Resources = polarisService.get(CountV0Resources.class, PolarisRequestFactory.createDefaultBuilder().uri(issueApiUrl).build());
-            final Integer totalIssues = countV0Resources.getData().stream()
-                                            .map(CountV0::getAttributes)
-                                            .map(CountV0Attributes::getValue)
-                                            .filter(Objects::nonNull)
-                                            .reduce(0, Integer::sum);
+            final Integer totalIssues = countService.getTotalIssueCountFromIssueApiUrl(issueApiUrl);
 
             return SubStepResponse.SUCCESS(totalIssues);
 
