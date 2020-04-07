@@ -24,7 +24,6 @@ package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
@@ -56,9 +55,12 @@ public class PolarisBuildStepWorkflow {
     public boolean perform() throws InterruptedException, IOException {
         validate(build);
         final JenkinsIntLogger logger = polarisWorkflowStepFactory.getOrCreateLogger();
-        final int jobTimeoutInMinutes = Optional.ofNullable(waitForIssues)
-                                            .map(WaitForIssues::getJobTimeoutInMinutes)
-                                            .orElse(0);
+        final Integer jobTimeoutInMinutes;
+        if (waitForIssues == null) {
+            jobTimeoutInMinutes = null;
+        } else {
+            jobTimeoutInMinutes = waitForIssues.getJobTimeoutInMinutes();
+        }
 
         return StepWorkflow
                    .first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
