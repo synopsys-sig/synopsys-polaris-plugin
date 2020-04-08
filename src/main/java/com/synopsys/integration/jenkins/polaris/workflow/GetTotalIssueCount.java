@@ -44,13 +44,13 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
     private final JenkinsIntLogger logger;
     private final CountService countService;
     private final JobService jobService;
-    private final Integer jobTimeoutInMinutes;
+    private final long jobTimeoutInSeconds;
 
-    public GetTotalIssueCount(final JenkinsIntLogger logger, final CountService countService, final JobService jobService, final int jobTimeoutInMinutes) {
+    public GetTotalIssueCount(final JenkinsIntLogger logger, final CountService countService, final JobService jobService, final long jobTimeoutInSeconds) {
         this.logger = logger;
         this.countService = countService;
         this.jobService = jobService;
-        this.jobTimeoutInMinutes = jobTimeoutInMinutes;
+        this.jobTimeoutInSeconds = jobTimeoutInSeconds;
     }
 
     @Override
@@ -72,7 +72,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 return SubStepResponse.SUCCESS(issueSummary.get().getTotalIssueCount());
             }
 
-            if (jobTimeoutInMinutes < 0) {
+            if (jobTimeoutInSeconds < 0) {
                 throw new PolarisIntegrationException(STEP_EXCEPTION_PREFIX + "Job timeout must be a positive number if the Polaris CLI is being run without -w");
             }
 
@@ -90,7 +90,7 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 if (jobStatusUrl == null) {
                     throw new PolarisIntegrationException(STEP_EXCEPTION_PREFIX + "tool with name " + tool.getToolName() + " has no jobStatusUrl");
                 }
-                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl, jobTimeoutInMinutes, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+                jobService.waitForJobStateIsCompletedOrDieByUrl(jobStatusUrl, jobTimeoutInSeconds, JobService.DEFAULT_WAIT_INTERVAL);
             }
 
             final Integer totalIssues = countService.getTotalIssueCountFromIssueApiUrl(issueApiUrl);

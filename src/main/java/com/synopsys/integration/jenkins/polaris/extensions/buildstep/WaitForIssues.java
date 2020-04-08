@@ -41,9 +41,11 @@ public class WaitForIssues extends AbstractDescribableImpl<WaitForIssues> {
     @HelpMarkdown("The build status to set the project to if there are issues")
     private ChangeBuildStatusTo buildStatusForIssues;
 
+    // jobTimeoutInMinutes must be a Number to guarantee identical functionality between Freestyle and Pipeline StepWorkflows that use GetTotalIssueCount.
+    // -- rotte APR 2020
     @Nullable
     @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete when the Polaris CLI is executed without -w (nonblocking mode). Defaults to 30 minutes if blank.")
-    private Integer jobTimeoutInMinutes;
+    private Number jobTimeoutInMinutes;
 
     @DataBoundConstructor
     public WaitForIssues() {
@@ -60,7 +62,7 @@ public class WaitForIssues extends AbstractDescribableImpl<WaitForIssues> {
         this.buildStatusForIssues = buildStatusForIssues;
     }
 
-    public Integer getJobTimeoutInMinutes() {
+    public Number getJobTimeoutInMinutes() {
         return jobTimeoutInMinutes;
     }
 

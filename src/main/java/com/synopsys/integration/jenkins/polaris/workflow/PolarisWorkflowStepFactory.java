@@ -64,7 +64,7 @@ public class PolarisWorkflowStepFactory {
         this.listener = listener;
     }
 
-    public CreatePolarisEnvironment createStepCreatePolarisEnvironment() throws IOException, InterruptedException {
+    public CreatePolarisEnvironment createStepCreatePolarisEnvironment() {
         final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
         final JenkinsIntLogger logger = getOrCreateLogger();
         return new CreatePolarisEnvironment(logger, intEnvironmentVariables);
@@ -75,12 +75,11 @@ public class PolarisWorkflowStepFactory {
             throw new AbortException("Polaris cannot be executed: No Polaris CLI installations could be found in the Global Tool Configuration. Please configure a Polaris CLI installation.");
         }
 
-        PolarisCli polarisCli = PolarisCli.findInstallationWithName(polarisCliName)
-                                    .orElseThrow(() -> new AbortException(
-                                        String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)));
-
-        polarisCli = polarisCli.forEnvironment(envVars);
-        polarisCli = polarisCli.forNode(node, listener);
+        final PolarisCli polarisCli = PolarisCli.findInstallationWithName(polarisCliName)
+                                          .orElseThrow(() -> new AbortException(
+                                              String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)))
+                                          .forEnvironment(envVars)
+                                          .forNode(node, listener);
 
         if (polarisCli.getHome() == null) {
             throw new AbortException(String.format(
@@ -92,7 +91,7 @@ public class PolarisWorkflowStepFactory {
         return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
     }
 
-    public ExecutePolarisCli createStepExecutePolarisCli(final String polarisArguments) throws IOException, InterruptedException {
+    public ExecutePolarisCli createStepExecutePolarisCli(final String polarisArguments) {
         final JenkinsIntLogger logger = getOrCreateLogger();
         final IntEnvironmentVariables intEnvironmentVariables = getOrCreateEnvironmentVariables();
         return new ExecutePolarisCli(logger, launcher, intEnvironmentVariables, workspace, listener, polarisArguments);
@@ -103,7 +102,7 @@ public class PolarisWorkflowStepFactory {
         return RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
     }
 
-    public GetTotalIssueCount createStepGetTotalIssueCount(final Integer jobTimeoutInMinutes) throws AbortException {
+    public GetTotalIssueCount createStepGetTotalIssueCount(final Number jobTimeoutInMinutes) throws AbortException {
         final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
         if (polarisGlobalConfig == null) {
             throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
@@ -112,7 +111,12 @@ public class PolarisWorkflowStepFactory {
         final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
         final JobService jobService = polarisServicesFactory.createJobService();
         final CountService countService = polarisServicesFactory.createCountService();
-        return new GetTotalIssueCount(logger, countService, jobService, Optional.ofNullable(jobTimeoutInMinutes).orElse(JobService.DEFAULT_JOB_TIMEOUT_IN_MINUTES));
+        final Long jobTimeoutInSeconds = Optional.ofNullable(jobTimeoutInMinutes)
+                                             .map(Number::doubleValue)
+                                             .map(value -> value * 60.0)
+                                             .map(Double::longValue)
+                                             .orElse(JobService.DEFAULT_TIMEOUT);
+        return new GetTotalIssueCount(logger, countService, jobService, jobTimeoutInSeconds);
     }
 
     public SubStep<Integer, Object> createStepWithConsumer(final ThrowingConsumer<Integer, RuntimeException> consumer) {

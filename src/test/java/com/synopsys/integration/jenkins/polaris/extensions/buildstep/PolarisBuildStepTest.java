@@ -125,8 +125,10 @@ public class PolarisBuildStepTest {
         Mockito.when(conditionalBuilder.then(Mockito.any(SubStep.class))).thenReturn(conditionalBuilder);
         Mockito.when(conditionalBuilder.butOnlyIf(Mockito.any(Object.class), Mockito.any(Predicate.class))).thenReturn(stepWorkflowBuilder);
 
+        final StepWorkflow stepWorkflow = Mockito.mock(StepWorkflow.class);
         final StepWorkflowResponse stepWorkflowResponse = Mockito.mock(StepWorkflowResponse.class);
-        Mockito.when(stepWorkflowBuilder.run()).thenReturn(stepWorkflowResponse);
+        Mockito.when(stepWorkflowBuilder.build()).thenReturn(stepWorkflow);
+        Mockito.when(stepWorkflow.run()).thenReturn(stepWorkflowResponse);
         Mockito.when(stepWorkflowResponse.handleResponse(Mockito.any(ThrowingFunction.class))).thenReturn(true);
 
         final WaitForIssues waitForIssues = Mockito.mock(WaitForIssues.class);
@@ -149,7 +151,8 @@ public class PolarisBuildStepTest {
         Mockito.verify(stepWorkflowBuilder).andSometimes(Mockito.any(RemoteSubStep.class));
         Mockito.verify(conditionalBuilder).then(Mockito.any(GetTotalIssueCount.class));
         Mockito.verify(conditionalBuilder).butOnlyIf(Mockito.any(WaitForIssues.class), Mockito.any(Predicate.class));
-        Mockito.verify(stepWorkflowBuilder).run();
+        Mockito.verify(stepWorkflowBuilder).build();
+        Mockito.verify(stepWorkflow).run();
         Mockito.verify(stepWorkflowResponse).handleResponse(Mockito.any(ThrowingFunction.class));
     }
 }

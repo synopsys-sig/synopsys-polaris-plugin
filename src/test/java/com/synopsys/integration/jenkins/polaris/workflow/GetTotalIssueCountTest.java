@@ -82,7 +82,7 @@ public class GetTotalIssueCountTest {
         invalidTool = Mockito.mock(CommonToolInfo.class);
         Mockito.when(invalidTool.getJobStatusUrl()).thenReturn(null);
 
-        Mockito.doThrow(new IntegrationException()).when(mockedJobService).waitForJobStateIsCompletedOrDieByUrl(FAILING_JOB_STATUS_URL, VALID_TIMEOUT, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+        Mockito.doThrow(new IntegrationException()).when(mockedJobService).waitForJobStateIsCompletedOrDieByUrl(FAILING_JOB_STATUS_URL, VALID_TIMEOUT, JobService.DEFAULT_WAIT_INTERVAL);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class GetTotalIssueCountTest {
         final GetTotalIssueCount getTotalIssueCount = new GetTotalIssueCount(mockedLogger, mockedCountService, mockedJobService, VALID_TIMEOUT);
         final SubStepResponse<Integer> response = getTotalIssueCount.run(mockedPreviousResponse);
 
-        Mockito.verify(mockedJobService, Mockito.times(2)).waitForJobStateIsCompletedOrDieByUrl(SUCCESSFUL_JOB_STATUS_URL, VALID_TIMEOUT, JobService.DEFAULT_WAIT_INTERVAL_IN_SECONDS);
+        Mockito.verify(mockedJobService, Mockito.times(2)).waitForJobStateIsCompletedOrDieByUrl(SUCCESSFUL_JOB_STATUS_URL, VALID_TIMEOUT, JobService.DEFAULT_WAIT_INTERVAL);
         Assert.assertTrue("Step response should be successful and contain data", response.isSuccess() && response.hasData());
         Assert.assertEquals(EXPECTED_ISSUE_COUNT, response.getData());
     }
