@@ -72,8 +72,8 @@ public class GetTotalIssueCount implements SubStep<String, Integer> {
                 return SubStepResponse.SUCCESS(issueSummary.get().getTotalIssueCount());
             }
 
-            if (jobTimeoutInSeconds < 0) {
-                throw new PolarisIntegrationException(STEP_EXCEPTION_PREFIX + "Job timeout must be a positive number if the Polaris CLI is being run without -w");
+            if (jobTimeoutInSeconds < 1) {
+                throw new PolarisIntegrationException(STEP_EXCEPTION_PREFIX + "Job timeout must be a positive integer if the Polaris CLI is being run without -w");
             }
 
             final String issueApiUrl = Optional.ofNullable(scanInfo)
