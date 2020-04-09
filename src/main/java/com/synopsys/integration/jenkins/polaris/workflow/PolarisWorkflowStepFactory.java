@@ -102,7 +102,7 @@ public class PolarisWorkflowStepFactory {
         return RemoteSubStep.of(launcher.getChannel(), getPolarisCliResponseContent);
     }
 
-    public GetTotalIssueCount createStepGetTotalIssueCount(final Number jobTimeoutInMinutes) throws AbortException {
+    public GetTotalIssueCount createStepGetTotalIssueCount(final Integer jobTimeoutInMinutes) throws AbortException {
         final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
         if (polarisGlobalConfig == null) {
             throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
@@ -112,9 +112,7 @@ public class PolarisWorkflowStepFactory {
         final JobService jobService = polarisServicesFactory.createJobService();
         final CountService countService = polarisServicesFactory.createCountService();
         final Long jobTimeoutInSeconds = Optional.ofNullable(jobTimeoutInMinutes)
-                                             .map(Number::doubleValue)
-                                             .map(value -> value * 60.0)
-                                             .map(Double::longValue)
+                                             .map(value -> value * 60L)
                                              .orElse(JobService.DEFAULT_TIMEOUT);
         return new GetTotalIssueCount(logger, countService, jobService, jobTimeoutInSeconds);
     }

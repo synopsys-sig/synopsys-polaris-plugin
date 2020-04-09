@@ -44,7 +44,7 @@ public class PolarisBuildStepWorkflow {
     private final WaitForIssues waitForIssues;
 
     private final JenkinsIntLogger logger;
-    private Number jobTimeoutInMinutes;
+    private Integer jobTimeoutInMinutes;
 
     public PolarisBuildStepWorkflow(final String polarisCLiName, final String polarisArguments, final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
         this.polarisCLiName = polarisCLiName;
@@ -104,7 +104,7 @@ public class PolarisBuildStepWorkflow {
 
     private void setBuildStatusOnIssues(final Integer issueCount) {
         final ChangeBuildStatusTo buildStatusToSet;
-        if (waitForIssues == null) {
+        if (waitForIssues == null || waitForIssues.getBuildStatusForIssues() == null) {
             buildStatusToSet = ChangeBuildStatusTo.SUCCESS;
         } else {
             buildStatusToSet = waitForIssues.getBuildStatusForIssues();
@@ -121,7 +121,7 @@ public class PolarisBuildStepWorkflow {
         }
     }
 
-    private void handleException(final JenkinsIntLogger logger, final AbstractBuild build, final Result result, final Exception e) {
+    private void handleException(final JenkinsIntLogger logger, final AbstractBuild<?, ?> build, final Result result, final Exception e) {
         logger.error("[ERROR] " + e.getMessage());
         logger.debug(e.getMessage(), e);
         build.setResult(result);

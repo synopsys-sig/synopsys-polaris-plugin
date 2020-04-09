@@ -29,11 +29,11 @@ import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
 public class PolarisIssueCheckStepWorkflow {
-    private final Number jobTimeoutInMinutes;
+    private final Integer jobTimeoutInMinutes;
     private final Boolean returnIssueCount;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
 
-    public PolarisIssueCheckStepWorkflow(final Number jobTimeoutInMinutes, final Boolean returnIssueCount, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
+    public PolarisIssueCheckStepWorkflow(final Integer jobTimeoutInMinutes, final Boolean returnIssueCount, final PolarisWorkflowStepFactory polarisWorkflowStepFactory) {
         this.jobTimeoutInMinutes = jobTimeoutInMinutes;
         this.returnIssueCount = returnIssueCount;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;

@@ -60,8 +60,8 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
     private Boolean returnIssueCount;
 
     @Nullable
-    @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete.")
-    private Number jobTimeoutInMinutes;
+    @HelpMarkdown("The maximum number of minutes to wait for jobs started by the Polaris CLI to complete when the Polaris CLI is executed without -w (nonblocking mode). Must be a positive integer, defaults to 30 minutes.")
+    private Integer jobTimeoutInMinutes;
 
     @DataBoundConstructor
     public PolarisIssueCheckStep() {
@@ -70,7 +70,7 @@ public class PolarisIssueCheckStep extends Step implements Serializable {
     }
 
     @Nullable
-    public Number getJobTimeoutInMinutes() {
+    public Integer getJobTimeoutInMinutes() {
         return jobTimeoutInMinutes;
     }
 
