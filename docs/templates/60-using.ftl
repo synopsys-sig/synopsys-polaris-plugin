@@ -6,6 +6,11 @@ To use ${solution_name} in a freestyle build, add it as a Build Step at the poin
 
 1. *Polaris CLI Installation*: Select the name you assigned to your ${polaris_cli_name} installation on the *Manage Jenkins > Global Tool Configuration* page.
 1. *Polaris Arguments*: The arguments you want passed to the ${polaris_cli_name} (for example: *analyze*).
+    Arguments passed in here must adhere to specific guidelines:
+    * All arguments must be separated by whitespace (specifically: spaces, tabs, newlines, carriage returns, or linefeeds)
+    * All values containing whitespace must be quoted
+    * All quotes in values must be escaped
+    * All backslashes in values must be escaped
 1. *Wait for Issues*: If you want the build to wait to see if ${polaris_product_name} finds issues in your project, check this box and
 use the *If there are issues* field to select the action you want the plugin to take when issues are discovered. Click *Advanced...* if you want to adjust maximum
 length of time the job will wait for issues (*Job timeout in minutes*).

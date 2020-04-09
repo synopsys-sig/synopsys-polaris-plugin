@@ -67,13 +67,10 @@ public class ExecutePolarisCliStepTest {
 
         final PolarisCli polarisCli = PowerMockito.mock(PolarisCli.class);
         final DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> allDescriptors = Mockito.mock(DescriptorExtensionList.class);
-        final PolarisCli.DescriptorImpl polarisCliDescriptor = Mockito.mock(PolarisCli.DescriptorImpl.class);
         PowerMockito.mockStatic(ToolInstallation.class);
         PowerMockito.mockStatic(PolarisCli.class);
-        Mockito.when(ToolInstallation.all()).thenReturn(allDescriptors);
-        Mockito.when(allDescriptors.get(PolarisCli.DescriptorImpl.class)).thenReturn(polarisCliDescriptor);
-        Mockito.when(polarisCliDescriptor.getInstallations()).thenReturn(new PolarisCli[] { polarisCli });
-        Mockito.when(PolarisCli.findInstanceWithName(TEST_POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
+        Mockito.when(PolarisCli.installationsExist()).thenReturn(true);
+        Mockito.when(PolarisCli.findInstallationWithName(TEST_POLARIS_CLI_NAME)).thenReturn(Optional.of(polarisCli));
 
         Mockito.when(polarisCli.forEnvironment(envVars)).thenReturn(polarisCli);
         Mockito.when(polarisCli.forNode(node, listener)).thenReturn(polarisCli);
