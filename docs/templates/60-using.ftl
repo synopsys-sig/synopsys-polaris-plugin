@@ -23,5 +23,6 @@ The ${solution_name} plugin provides two pipeline steps:
 
 * *polaris*: Runs the ${polaris_cli_name} to initiate ${polaris_product_name} analysis of your project.
 * *polarisIssueCheck*: Waits until ${polaris_product_name} has completed analysis of your project, and determines the number of issues found.
+    * Note that for polarisIssueCheck, timeout in minutes is a field that requires a positive integer. Values that are not integers may be truncated by Jenkins before being passed on to the plugin.
 
 Documentation on using these pipeline steps can be found in the [Jenkins pipeline steps documentation](https://jenkins.io/doc/pipeline/steps/synopsys-polaris/).
