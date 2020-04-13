@@ -1,4 +1,4 @@
-# Using in a build
+# Using plugin in a build
 
 You can use ${solution_name} in a freestyle build or a pipeline build.
 

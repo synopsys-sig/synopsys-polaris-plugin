@@ -1,4 +1,4 @@
-# Configuring
+# Configuration
 
 After the ${solution_name} plugin is installed, and before you use it in a job, you must configure the following:
 
