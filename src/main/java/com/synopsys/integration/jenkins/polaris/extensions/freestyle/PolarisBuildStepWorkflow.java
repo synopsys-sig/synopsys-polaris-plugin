@@ -20,15 +20,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.synopsys.integration.jenkins.polaris.extensions.buildstep;
+package com.synopsys.integration.jenkins.polaris.extensions.freestyle;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.ChangeBuildStatusTo;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.workflow.PolarisJenkinsStepWorkflow;
 import com.synopsys.integration.jenkins.polaris.workflow.PolarisWorkflowStepFactory;
+import com.synopsys.integration.polaris.common.service.PolarisServicesFactory;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 
@@ -36,7 +37,7 @@ import hudson.AbortException;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 
-public class PolarisBuildStepWorkflow {
+public class PolarisBuildStepWorkflow extends PolarisJenkinsStepWorkflow<Object> {
     private final String polarisCLiName;
     private final String polarisArguments;
     private final PolarisWorkflowStepFactory polarisWorkflowStepFactory;
@@ -46,20 +47,16 @@ public class PolarisBuildStepWorkflow {
     private final JenkinsIntLogger logger;
     private Integer jobTimeoutInMinutes;
 
-    public PolarisBuildStepWorkflow(final String polarisCLiName, final String polarisArguments, final WaitForIssues waitForIssues, final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final AbstractBuild<?, ?> build) {
+    public PolarisBuildStepWorkflow(final PolarisWorkflowStepFactory polarisWorkflowStepFactory, final JenkinsIntLogger logger, final PolarisServicesFactory polarisServicesFactory, final String polarisCLiName, final String polarisArguments,
+        final WaitForIssues waitForIssues, final AbstractBuild<?, ?> build) {
+        super(logger, polarisServicesFactory);
         this.polarisCLiName = polarisCLiName;
         this.polarisArguments = polarisArguments;
         this.polarisWorkflowStepFactory = polarisWorkflowStepFactory;
         this.build = build;
         this.waitForIssues = waitForIssues;
-        this.logger = polarisWorkflowStepFactory.getOrCreateLogger();
+        this.logger = logger;
         this.jobTimeoutInMinutes = waitForIssues == null ? null : waitForIssues.getJobTimeoutInMinutes();
-    }
-
-    public Boolean perform() throws IOException, InterruptedException {
-        this.validate();
-        return this.createWorkflow().run()
-                   .handleResponse(this::afterPerform);
     }
 
     protected void validate() throws AbortException {
@@ -71,7 +68,7 @@ public class PolarisBuildStepWorkflow {
         }
     }
 
-    protected StepWorkflow<Object> createWorkflow() throws IOException, InterruptedException {
+    protected StepWorkflow<Object> buildWorkflow() throws AbortException {
         return StepWorkflow
                    .first(polarisWorkflowStepFactory.createStepCreatePolarisEnvironment())
                    .then(polarisWorkflowStepFactory.createStepFindPolarisCli(polarisCLiName))
@@ -81,25 +78,6 @@ public class PolarisBuildStepWorkflow {
                    .then(polarisWorkflowStepFactory.createStepWithConsumer(this::setBuildStatusOnIssues))
                    .butOnlyIf(waitForIssues, Objects::nonNull)
                    .build();
-    }
-
-    protected Boolean afterPerform(final StepWorkflowResponse<Object> stepWorkflowResponse) {
-        final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
-        try {
-            if (!wasSuccessful) {
-                throw stepWorkflowResponse.getException();
-            }
-        } catch (final InterruptedException e) {
-            logger.error("[ERROR] Synopsys Polaris thread was interrupted.", e);
-            build.setResult(Result.ABORTED);
-            Thread.currentThread().interrupt();
-        } catch (final IntegrationException e) {
-            this.handleException(logger, build, Result.FAILURE, e);
-        } catch (final Exception e) {
-            this.handleException(logger, build, Result.UNSTABLE, e);
-        }
-
-        return stepWorkflowResponse.wasSuccessful();
     }
 
     private void setBuildStatusOnIssues(final Integer issueCount) {
@@ -119,6 +97,25 @@ public class PolarisBuildStepWorkflow {
             logger.alwaysLog("Setting build status to " + result.toString());
             build.setResult(result);
         }
+    }
+
+    public Boolean handleResponse(final StepWorkflowResponse<Object> stepWorkflowResponse) {
+        final boolean wasSuccessful = stepWorkflowResponse.wasSuccessful();
+        try {
+            if (!wasSuccessful) {
+                throw stepWorkflowResponse.getException();
+            }
+        } catch (final InterruptedException e) {
+            logger.error("[ERROR] Synopsys Polaris thread was interrupted.", e);
+            build.setResult(Result.ABORTED);
+            Thread.currentThread().interrupt();
+        } catch (final IntegrationException e) {
+            this.handleException(logger, build, Result.FAILURE, e);
+        } catch (final Exception e) {
+            this.handleException(logger, build, Result.UNSTABLE, e);
+        }
+
+        return stepWorkflowResponse.wasSuccessful();
     }
 
     private void handleException(final JenkinsIntLogger logger, final AbstractBuild<?, ?> build, final Result result, final Exception e) {

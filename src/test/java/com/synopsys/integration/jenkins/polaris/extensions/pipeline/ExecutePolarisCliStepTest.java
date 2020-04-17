@@ -14,13 +14,16 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.synopsys.integration.jenkins.polaris.extensions.global.PolarisGlobalConfig;
 import com.synopsys.integration.jenkins.polaris.extensions.tools.PolarisCli;
+import com.synopsys.integration.polaris.common.configuration.PolarisServerConfig;
 import com.synopsys.integration.stepworkflow.StepWorkflow;
 import com.synopsys.integration.stepworkflow.StepWorkflowResponse;
 import com.synopsys.integration.stepworkflow.SubStep;
 
 import hudson.DescriptorExtensionList;
 import hudson.EnvVars;
+import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Node;
@@ -28,10 +31,11 @@ import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
+import jenkins.model.GlobalConfiguration;
 
 @PowerMockIgnore({ "javax.crypto.*", "javax.net.ssl.*" })
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ PolarisCli.class, StepWorkflow.class })
+@PrepareForTest({ PolarisCli.class, StepWorkflow.class, GlobalConfiguration.class })
 public class ExecutePolarisCliStepTest {
     public static final String TEST_POLARIS_ARGS = "testArgs";
     private static final String WORKSPACE_REL_PATH = "out/test/PolarisBuildStepTest/testPerform/workspace";
@@ -65,6 +69,15 @@ public class ExecutePolarisCliStepTest {
         Mockito.when(stepContext.get(FilePath.class)).thenReturn(workspaceFilePath);
         final ExecutePolarisCliStep.Execution stepExecution = (ExecutePolarisCliStep.Execution) executePolarisCliStep.start(stepContext);
 
+        final PolarisGlobalConfig polarisGlobalConfig = Mockito.mock(PolarisGlobalConfig.class);
+        final ExtensionList extensionList = Mockito.mock(ExtensionList.class);
+        PowerMockito.mockStatic(GlobalConfiguration.class);
+        Mockito.when(GlobalConfiguration.all()).thenReturn(extensionList);
+        Mockito.when(extensionList.get(PolarisGlobalConfig.class)).thenReturn(polarisGlobalConfig);
+
+        final PolarisServerConfig polarisServerConfig = Mockito.mock(PolarisServerConfig.class);
+        Mockito.when(polarisGlobalConfig.getPolarisServerConfig()).thenReturn(polarisServerConfig);
+
         final PolarisCli polarisCli = PowerMockito.mock(PolarisCli.class);
         final DescriptorExtensionList<ToolInstallation, ToolDescriptor<?>> allDescriptors = Mockito.mock(DescriptorExtensionList.class);
         PowerMockito.mockStatic(ToolInstallation.class);
@@ -81,8 +94,10 @@ public class ExecutePolarisCliStepTest {
         Mockito.when(StepWorkflow.first(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
         Mockito.when(stepWorkflowBuilder.then(Mockito.any(SubStep.class))).thenReturn(stepWorkflowBuilder);
 
+        final StepWorkflow stepWorkflow = Mockito.mock(StepWorkflow.class);
         final StepWorkflowResponse stepWorkflowResponse = Mockito.mock(StepWorkflowResponse.class);
-        Mockito.when(stepWorkflowBuilder.run()).thenReturn(stepWorkflowResponse);
+        Mockito.when(stepWorkflowBuilder.build()).thenReturn(stepWorkflow);
+        Mockito.when(stepWorkflow.run()).thenReturn(stepWorkflowResponse);
         Mockito.when(stepWorkflowResponse.getDataOrThrowException()).thenReturn(123);
 
         final Integer result = stepExecution.run();

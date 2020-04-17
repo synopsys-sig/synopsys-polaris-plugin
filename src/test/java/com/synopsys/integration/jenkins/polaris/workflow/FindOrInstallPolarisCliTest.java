@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.jenkins.extensions.JenkinsIntLogger;
+import com.synopsys.integration.jenkins.polaris.extensions.tools.FindOrInstallPolarisCli;
 
 // If env var TEST_POLARIS_URL is set, testInstall() downloads the Polaris CLI from that Polaris server
 public class FindOrInstallPolarisCliTest {

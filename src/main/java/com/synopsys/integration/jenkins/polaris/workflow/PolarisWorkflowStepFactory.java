@@ -22,7 +22,6 @@
  */
 package com.synopsys.integration.jenkins.polaris.workflow;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import com.synopsys.integration.function.ThrowingConsumer;
@@ -53,8 +52,9 @@ public class PolarisWorkflowStepFactory {
     private final TaskListener listener;
 
     // These fields are lazily initialized; inside this class: use getOrCreate...() to get these values
-    private IntEnvironmentVariables intEnvironmentVariables = null;
-    private JenkinsIntLogger logger = null;
+    private IntEnvironmentVariables _intEnvironmentVariables = null;
+    private JenkinsIntLogger _logger = null;
+    private PolarisServicesFactory _polarisServicesFactory = null;
 
     public PolarisWorkflowStepFactory(final Node node, final FilePath workspace, final EnvVars envVars, final Launcher launcher, final TaskListener listener) {
         this.node = node;
@@ -70,25 +70,16 @@ public class PolarisWorkflowStepFactory {
         return new CreatePolarisEnvironment(logger, intEnvironmentVariables);
     }
 
-    public RemoteSubStep<String> createStepFindPolarisCli(final String polarisCliName) throws IOException, InterruptedException {
+    public FindPolarisCli createStepFindPolarisCli(final String polarisCliName) throws AbortException {
         if (!PolarisCli.installationsExist()) {
             throw new AbortException("Polaris cannot be executed: No Polaris CLI installations could be found in the Global Tool Configuration. Please configure a Polaris CLI installation.");
         }
 
         final PolarisCli polarisCli = PolarisCli.findInstallationWithName(polarisCliName)
                                           .orElseThrow(() -> new AbortException(
-                                              String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)))
-                                          .forEnvironment(envVars)
-                                          .forNode(node, listener);
+                                              String.format("Polaris cannot be executed: No Polaris CLI installation with the name %s could be found in the Global Tool Configuration.", polarisCliName)));
 
-        if (polarisCli.getHome() == null) {
-            throw new AbortException(String.format(
-                "Polaris cannot be executed: The Polaris CLI installation home could not be determined for installation %s. Please ensure that this installation is correctly configured in the Global Tool Configuration."
-                , polarisCliName));
-        }
-
-        final GetPathToPolarisCli getPathToPolarisCli = new GetPathToPolarisCli(polarisCli.getHome());
-        return RemoteSubStep.of(launcher.getChannel(), getPathToPolarisCli);
+        return new FindPolarisCli(launcher.getChannel(), polarisCli, node, listener, envVars);
     }
 
     public ExecutePolarisCli createStepExecutePolarisCli(final String polarisArguments) {
@@ -103,17 +94,13 @@ public class PolarisWorkflowStepFactory {
     }
 
     public GetTotalIssueCount createStepGetTotalIssueCount(final Integer jobTimeoutInMinutes) throws AbortException {
-        final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
-        if (polarisGlobalConfig == null) {
-            throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
-        }
-        final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
-        final PolarisServicesFactory polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(logger);
+        final PolarisServicesFactory polarisServicesFactory = getOrCreatePolarisServicesFactory();
         final JobService jobService = polarisServicesFactory.createJobService();
         final CountService countService = polarisServicesFactory.createCountService();
         final Long jobTimeoutInSeconds = Optional.ofNullable(jobTimeoutInMinutes)
                                              .map(value -> value * 60L)
                                              .orElse(JobService.DEFAULT_TIMEOUT);
+        final JenkinsIntLogger logger = getOrCreateLogger();
         return new GetTotalIssueCount(logger, countService, jobService, jobTimeoutInSeconds);
     }
 
@@ -122,19 +109,31 @@ public class PolarisWorkflowStepFactory {
     }
 
     public JenkinsIntLogger getOrCreateLogger() {
-        if (logger == null) {
-            logger = new JenkinsIntLogger(listener);
-            logger.setLogLevel(getOrCreateEnvironmentVariables());
+        if (_logger == null) {
+            _logger = new JenkinsIntLogger(listener);
+            _logger.setLogLevel(getOrCreateEnvironmentVariables());
         }
-        return logger;
+        return _logger;
+    }
+
+    public PolarisServicesFactory getOrCreatePolarisServicesFactory() throws AbortException {
+        if (_polarisServicesFactory == null) {
+            final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
+            if (polarisGlobalConfig == null) {
+                throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
+            }
+            final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
+            _polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(_logger);
+        }
+        return _polarisServicesFactory;
     }
 
     private IntEnvironmentVariables getOrCreateEnvironmentVariables() {
-        if (intEnvironmentVariables == null) {
-            intEnvironmentVariables = new IntEnvironmentVariables(false);
-            intEnvironmentVariables.putAll(envVars);
+        if (_intEnvironmentVariables == null) {
+            _intEnvironmentVariables = new IntEnvironmentVariables(false);
+            _intEnvironmentVariables.putAll(envVars);
         }
-        return intEnvironmentVariables;
+        return _intEnvironmentVariables;
     }
 
 }
