@@ -117,13 +117,14 @@ public class PolarisWorkflowStepFactory {
     }
 
     public PolarisServicesFactory getOrCreatePolarisServicesFactory() throws AbortException {
+        final JenkinsIntLogger jenkinsIntLogger = getOrCreateLogger();
         if (_polarisServicesFactory == null) {
             final PolarisGlobalConfig polarisGlobalConfig = GlobalConfiguration.all().get(PolarisGlobalConfig.class);
             if (polarisGlobalConfig == null) {
                 throw new AbortException("Polaris cannot be executed: No Polaris global configuration detected in the Jenkins system configuration.");
             }
             final PolarisServerConfig polarisServerConfig = polarisGlobalConfig.getPolarisServerConfig();
-            _polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(_logger);
+            _polarisServicesFactory = polarisServerConfig.createPolarisServicesFactory(jenkinsIntLogger);
         }
         return _polarisServicesFactory;
     }
